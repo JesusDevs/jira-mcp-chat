@@ -3,7 +3,7 @@
  * Soporte para GPT, Gemini, Ollama y modelos personalizados
  */
 
-import { GoogleGenerativeAI, FunctionCallingMode } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export interface AIProvider {
   name: string;
@@ -78,47 +78,21 @@ export const AI_PROVIDERS: Record<string, AIProvider> = {
     }
   },
 
-  'ollama-llama3': {
-    name: 'ollama-llama3',
-    displayName: 'Llama 3 (Ollama)',
+  'ollama': {
+    name: 'ollama',
+    displayName: 'Ollama Local',
     type: 'ollama',
-    models: ['llama3:8b', 'llama3:70b', 'llama3.1:8b', 'llama3.1:70b'],
+    models: ['llama3.1:latest', 'llama3.2:latest', 'deepseek-coder:latest'],
     apiKeyRequired: false,
     localModel: true,
     config: {
-      baseURL: 'http://localhost:11434',
+      baseURL: 'http://127.0.0.1:11434',
       temperature: 0.7,
       maxTokens: 4096
     }
   },
 
-  'ollama-codellama': {
-    name: 'ollama-codellama',
-    displayName: 'Code Llama (Ollama)',
-    type: 'ollama',
-    models: ['codellama:7b', 'codellama:13b', 'codellama:34b'],
-    apiKeyRequired: false,
-    localModel: true,
-    config: {
-      baseURL: 'http://localhost:11434',
-      temperature: 0.3,
-      maxTokens: 4096
-    }
-  },
 
-  'ollama-mistral': {
-    name: 'ollama-mistral',
-    displayName: 'Mistral (Ollama)',
-    type: 'ollama',
-    models: ['mistral:7b', 'mistral:instruct', 'mixtral:8x7b'],
-    apiKeyRequired: false,
-    localModel: true,
-    config: {
-      baseURL: 'http://localhost:11434',
-      temperature: 0.7,
-      maxTokens: 4096
-    }
-  }
 };
 
 /**
@@ -182,7 +156,7 @@ export class UniversalAIClient {
 
   private initializeOllama() {
     this.client = {
-      baseURL: this.provider.config?.baseURL || 'http://localhost:11434',
+      baseURL: this.provider.config?.baseURL || 'http://127.0.0.1:11434',
       headers: {
         'Content-Type': 'application/json'
       }
@@ -300,8 +274,7 @@ export class UniversalAIClient {
       }));
 
       chat = model.startChat({
-        tools: [{ functionDeclarations }],
-        toolConfig: { functionCallingMode: FunctionCallingMode.AUTO }
+        tools: [{ functionDeclarations }]
       });
     } else {
       chat = model.startChat();
@@ -463,29 +436,9 @@ export class AIClientFactory {
   }
 
   static async detectAvailableProviders(): Promise<string[]> {
-    const available: string[] = [];
-    
-    for (const [name, provider] of Object.entries(AI_PROVIDERS)) {
-      try {
-        // Verificación básica para providers locales
-        if (provider.type === 'ollama') {
-          const response = await fetch(`${provider.config?.baseURL}/api/tags`);
-          if (response.ok) {
-            available.push(name);
-          }
-        } else if (provider.apiKeyRequired) {
-          // Para providers que requieren API key, solo verificar si tienen configuración
-          const apiKey = process.env[`${provider.type.toUpperCase()}_API_KEY`];
-          if (apiKey) {
-            available.push(name);
-          }
-        }
-      } catch (error) {
-        // Provider no disponible
-      }
-    }
-    
-    return available;
+    // Por simplicidad, devolvemos todos los providers configurados
+    // La validación real se hace en el backend
+    return Object.keys(AI_PROVIDERS);
   }
 }
 

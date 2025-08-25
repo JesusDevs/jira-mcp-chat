@@ -20,14 +20,25 @@ export function Chat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [currentAI, setCurrentAI] = useState<{provider: string, model: string}>({
-    provider: 'ollama-llama3',
-    model: 'llama3:8b'
+  const [currentAI, setCurrentAI] = useState<{provider: string, model: string}>(() => {
+    // Cargar configuración guardada del localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('aiConfig');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.warn('Error loading saved AI config:', e);
+        }
+      }
+    }
+    return { provider: 'gemini', model: 'gemini-2.0-flash-exp' };
   });
 
   const handleProviderChange = (provider: string, model: string) => {
     setCurrentAI({ provider, model });
-    // Aquí podrías llamar a una función para cambiar el AI provider en el backend
+    // Guardar en localStorage para persistencia
+    localStorage.setItem('aiConfig', JSON.stringify({ provider, model }));
     console.log(`🔄 AI changed to: ${provider} - ${model}`);
   };
 
@@ -48,6 +59,8 @@ export function Chat() {
         },
         body: JSON.stringify({
           messages: [...messages, userMessage],
+          aiProvider: currentAI.provider,
+          aiModel: currentAI.model,
         }),
       });
 

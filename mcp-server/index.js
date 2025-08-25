@@ -63,7 +63,7 @@ class JiraMCPServer {
         
         console.error(`📋 Listing ${schemas.length} available tools`);
         
-        return {
+      return {
           tools: schemas
         };
       } catch (error) {
@@ -75,8 +75,8 @@ class JiraMCPServer {
     // Manejador para ejecutar herramientas
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
-        const { name, arguments: args } = request.params;
-        
+      const { name, arguments: args } = request.params;
+
         console.error(`🔧 Executing tool: ${name}`);
         
         // Verificar que la herramienta existe
@@ -209,8 +209,8 @@ class JiraMCPServer {
   getServerInfo() {
     const toolsInfo = this.toolsManager.getToolsInfo();
     const configStatus = this.checkConfiguration();
-    
-    return {
+
+      return {
       name: 'jira-mcp-server',
       version: '2.0.0',
       architecture: 'modular',

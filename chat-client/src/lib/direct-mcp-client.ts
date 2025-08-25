@@ -1,8 +1,188 @@
-import { GoogleGenerativeAI, FunctionCallingMode } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import axios from 'axios';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const MODEL_NAME = 'gemini-2.0-flash-exp';
+let MODEL_NAME = 'gemini-2.0-flash-exp';
+let CURRENT_AI_PROVIDER = 'gemini';
+
+// Estado del AI provider actual
+let currentAIConfig = {
+  provider: 'gemini',
+  model: 'gemini-2.0-flash-exp',
+  apiKey: process.env.GEMINI_API_KEY
+};
+
+// Función helper para logs de debug
+function debugLog(context: string, data: any) {
+  const timestamp = new Date().toISOString();
+  console.log(`🐛 [DEBUG ${timestamp}] ${context}:`, JSON.stringify(data, null, 2));
+}
+
+/**
+ * Cambiar el AI provider dinámicamente
+ */
+export function switchAIProvider(provider: string, model: string) {
+  console.log(`🔄 Switching AI to: ${provider} - ${model}`);
+  
+  currentAIConfig.provider = provider;
+  currentAIConfig.model = model;
+  CURRENT_AI_PROVIDER = provider;
+  MODEL_NAME = model;
+  
+  // Guardar en localStorage para persistencia
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('aiConfig', JSON.stringify({ provider, model }));
+  }
+  
+  console.log(`✅ AI switched to: ${provider} - ${model}`);
+}
+
+/**
+ * Cargar configuración guardada
+ */
+export function loadSavedAIConfig() {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('aiConfig');
+    if (saved) {
+      try {
+        const config = JSON.parse(saved);
+        switchAIProvider(config.provider, config.model);
+        return config;
+      } catch (e) {
+        console.warn('Error loading saved AI config:', e);
+      }
+    }
+  }
+  return currentAIConfig;
+}
+
+/**
+ * Procesar query usando Ollama
+ */
+async function processOllamaQuery(messagesInput: any[]) {
+  const queryId = Math.random().toString(36).substr(2, 9);
+  const lastMessage = messagesInput[messagesInput.length - 1]?.content;
+  
+  console.log(`🦙 [Ollama ${queryId}] Processing with model: ${currentAIConfig.model}`);
+  debugLog(`Ollama ${queryId} - Request preparation`, {
+    model: currentAIConfig.model,
+    messageLength: lastMessage?.length,
+    endpoint: 'http://127.0.0.1:11434/api/chat'
+  });
+  
+  // Preparar el prompt con información de tools
+  const toolsInfo = tools.map(tool => 
+    `- ${tool.name}: ${tool.description}`
+  ).join('\n');
+  
+  const systemPrompt = `Eres un asistente de Jira con las siguientes herramientas disponibles:
+
+${toolsInfo}
+
+Cuando necesites usar una herramienta, responde EXACTAMENTE en este formato:
+TOOL_CALL:nombre_herramienta:{"arg1":"valor1","arg2":"valor2"}
+
+Ejemplos:
+- Para listar proyectos: TOOL_CALL:get_jira_projects:{}
+- Para buscar issues: TOOL_CALL:search_jira_issues:{"query":"project = AIDEV"}
+
+Responde siempre en español y sé útil con las consultas de Jira.`;
+
+  const payload = {
+    model: currentAIConfig.model,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: lastMessage }
+    ],
+    stream: false,
+    options: {
+      temperature: 0.7,
+      num_predict: 4096
+    }
+  };
+
+  try {
+    const response = await fetch('http://127.0.0.1:11434/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Ollama API error: ${response.status} ${error}`);
+    }
+
+    const data = await response.json();
+    let content = data.message?.content || '';
+    let toolCalls = [];
+    let toolResponses = [];
+
+    // Detectar y ejecutar tool calls
+    const toolCallMatch = content.match(/TOOL_CALL:(\w+):(\{.*?\})/);
+    if (toolCallMatch) {
+      try {
+        const toolName = toolCallMatch[1];
+        const toolArgs = JSON.parse(toolCallMatch[2]);
+        
+        console.log(`🔧 Executing tool: ${toolName} with args:`, toolArgs);
+        
+        // Ejecutar la herramienta
+        const toolResult = await executeToolCall({ name: toolName, args: toolArgs });
+        
+        toolCalls.push({ name: toolName, args: toolArgs });
+        toolResponses.push(toolResult);
+        
+        // Remover el tool call del contenido y agregar resultado
+        content = content.replace(toolCallMatch[0], '').trim();
+        content += `\n\n✅ Ejecuté la herramienta ${toolName} y obtuve ${toolResult.data ? `${toolResult.data.length} resultados` : 'resultados'}.`;
+        
+      } catch (e) {
+        console.error('❌ [Tool Execution Error] Failed to parse/execute tool call from Ollama response:');
+        console.error('- Tool name:', toolName);
+        console.error('- Tool args raw:', toolCallMatch[2]);
+        console.error('- Parse error:', e.message);
+        console.error('- Error stack:', e.stack);
+        console.error('- Ollama response content:', content);
+        content += '\n\n❌ Error ejecutando la herramienta solicitada. Ver logs para detalles.';
+      }
+    }
+
+    return {
+      reply: content,
+      toolCalls,
+      toolResponses,
+      provider: 'ollama',
+      model: currentAIConfig.model
+    };
+
+  } catch (error) {
+    console.error('❌ [Ollama API Error] Detailed error information:');
+    console.error('- Error type:', error.constructor.name);
+    console.error('- Error message:', error.message);
+    console.error('- Error stack:', error.stack);
+    console.error('- Request payload:', JSON.stringify(payload, null, 2));
+    console.error('- Ollama endpoint:', 'http://127.0.0.1:11434/api/chat');
+    console.error('- Current AI config:', currentAIConfig);
+    
+    // Información adicional para debugging
+    if (error.response) {
+      console.error('- HTTP status:', error.response.status);
+      console.error('- HTTP statusText:', error.response.statusText);
+      console.error('- Response headers:', error.response.headers);
+    }
+    
+    // Verificar si Ollama está corriendo
+    try {
+      const healthCheck = await fetch('http://127.0.0.1:11434/api/tags');
+      console.log('🔍 Ollama health check:', healthCheck.ok ? 'Running' : 'Not responding');
+    } catch (healthError) {
+      console.error('🚨 Ollama health check failed:', healthError.message);
+    }
+    
+    throw error;
+  }
+}
 
 /**
  * Cliente MCP directo que implementa las herramientas de Jira
@@ -590,11 +770,44 @@ export async function executeToolCall(toolCall: any) {
 
     throw new Error(`Tool ${toolName} not found`);
   } catch (error: any) {
-    console.error(`❌ Error executing tool ${toolName}:`, error.message);
+    console.error(`❌ [Tool Execution Error] Detailed error for tool ${toolName}:`);
+    console.error('- Tool name:', toolName);
+    console.error('- Tool arguments:', JSON.stringify(toolArgs, null, 2));
+    console.error('- Error type:', error.constructor.name);
+    console.error('- Error message:', error.message);
+    console.error('- Error stack:', error.stack);
+    
+    // Log del request HTTP si está disponible
+    if (error.config) {
+      console.error('- HTTP Request details:');
+      console.error('  - Method:', error.config.method?.toUpperCase());
+      console.error('  - URL:', error.config.url);
+      console.error('  - Headers:', JSON.stringify(error.config.headers, null, 2));
+      if (error.config.data) {
+        console.error('  - Request body:', JSON.stringify(error.config.data, null, 2));
+      }
+    }
+    
+    // Log de la response HTTP si está disponible
+    if (error.response) {
+      console.error('- HTTP Response details:');
+      console.error('  - Status:', error.response.status);
+      console.error('  - Status text:', error.response.statusText);
+      console.error('  - Headers:', JSON.stringify(error.response.headers, null, 2));
+      console.error('  - Response body:', JSON.stringify(error.response.data, null, 2));
+    }
+    
+    // Log del estado de configuración
+    console.error('- Configuration state:');
+    console.error('  - JIRA_BASE_URL:', process.env.JIRA_BASE_URL ? 'Set' : 'Missing');
+    console.error('  - JIRA_EMAIL:', process.env.JIRA_EMAIL ? 'Set' : 'Missing');
+    console.error('  - JIRA_API_TOKEN:', process.env.JIRA_API_TOKEN ? 'Set' : 'Missing');
     
     // Manejo especial de errores comunes
     if (error.response?.data?.errorMessages) {
       const errorMsg = error.response.data.errorMessages[0];
+      console.error('- Jira error message:', errorMsg);
+      
       if (errorMsg.includes('does not exist or you do not have permission')) {
         return {
           name: toolName,
@@ -603,16 +816,50 @@ export async function executeToolCall(toolCall: any) {
             error: 'Issue not found or no permission',
             message: `The requested issue/query was not found or you don't have permission to view it. Try: 1) List available projects first, 2) Search with broader terms, 3) Check if the issue key is correct`,
             suggestion: 'Try searching for recent issues or listing projects instead',
+            debugInfo: {
+              originalError: errorMsg,
+              toolArgs: toolArgs,
+              timestamp: new Date().toISOString()
+            }
           },
         };
       }
     }
     
-    throw new Error(`Failed to execute ${toolName}: ${error.response?.data?.errorMessages?.[0] || error.message}`);
+    // Error genérico con información de debug
+    const enhancedError = new Error(`Failed to execute ${toolName}: ${error.response?.data?.errorMessages?.[0] || error.message}`);
+    enhancedError.cause = {
+      originalError: error,
+      toolName,
+      toolArgs,
+      timestamp: new Date().toISOString(),
+      request: error.config || null,
+      response: error.response?.data || null
+    };
+    
+    throw enhancedError;
   }
 }
 
 export async function processQuery(messagesInput: any[]) {
+  const queryId = Math.random().toString(36).substr(2, 9);
+  console.log(`🚀 [Query ${queryId}] Starting query processing`);
+  console.log(`🤖 Using AI Provider: ${currentAIConfig.provider} - ${currentAIConfig.model}`);
+  
+  debugLog(`Query ${queryId} - Input`, {
+    provider: currentAIConfig.provider,
+    model: currentAIConfig.model,
+    messagesCount: messagesInput.length,
+    lastMessage: messagesInput[messagesInput.length - 1]?.content?.substring(0, 100) + '...'
+  });
+
+  // Si es Ollama, usar implementación diferente
+  if (currentAIConfig.provider === 'ollama') {
+    console.log(`🦙 [Query ${queryId}] Routing to Ollama processing`);
+    return await processOllamaQuery(messagesInput);
+  }
+
+  // Para Gemini (comportamiento original)
   const model = genAI.getGenerativeModel({
     model: MODEL_NAME,
     tools: {
@@ -620,7 +867,7 @@ export async function processQuery(messagesInput: any[]) {
     },
     toolConfig: {
       functionCallingConfig: {
-        mode: FunctionCallingMode.AUTO,
+        mode: "auto",
       },
     },
   });
