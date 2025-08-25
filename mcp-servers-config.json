@@ -137,17 +137,57 @@
     }
   },
 
+  "ai_config": {
+    "default_provider": "gemini",
+    "default_model": "gemini-1.5-flash",
+    "fallback_provider": "ollama-llama3",
+    "fallback_model": "llama3:8b",
+    "providers": {
+      "openai": {
+        "api_key_env": "OPENAI_API_KEY",
+        "base_url": "https://api.openai.com/v1",
+        "default_model": "gpt-4",
+        "temperature": 0.7,
+        "max_tokens": 4096
+      },
+      "gemini": {
+        "api_key_env": "GEMINI_API_KEY", 
+        "default_model": "gemini-1.5-flash",
+        "temperature": 0.7,
+        "max_tokens": 4096
+      },
+      "ollama": {
+        "base_url": "http://localhost:11434",
+        "default_model": "llama3:8b",
+        "temperature": 0.7,
+        "max_tokens": 4096,
+        "timeout": 60000
+      }
+    },
+    "auto_fallback": true,
+    "quota_management": {
+      "enabled": true,
+      "retry_delay": 30000,
+      "max_retries": 3
+    }
+  },
+
   "ui_config": {
     "chat": {
-      "default_model": "gemini-2.0-flash-exp",
+      "default_provider": "${AI_DEFAULT_PROVIDER:gemini}",
+      "default_model": "${AI_DEFAULT_MODEL:gemini-1.5-flash}",
       "temperature": 0.7,
       "max_tokens": 4096,
-      "function_calling": "auto"
+      "function_calling": "auto",
+      "show_ai_selector": true,
+      "show_usage_stats": true
     },
     "cursor": {
       "config_file": ".cursor-mcp.json",
       "auto_reload": true,
-      "debug": false
+      "debug": false,
+      "ai_provider": "${CURSOR_AI_PROVIDER:gemini}",
+      "ai_model": "${CURSOR_AI_MODEL:gemini-1.5-flash}"
     }
   },
 

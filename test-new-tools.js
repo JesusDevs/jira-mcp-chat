@@ -5,7 +5,7 @@
  * Prueba: search_epics, search_by_type, create_jira_issue
  */
 
-const axios = require('axios');
+import axios from 'axios';
 
 const CHAT_URL = 'http://localhost:3000/api/chat';
 

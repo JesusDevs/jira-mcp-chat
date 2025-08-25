@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AutoResizeTextarea } from "@/components/autoresize-textarea";
-import { ArrowUp, Bot, User } from "lucide-react";
+import AISelector from "@/components/ai-selector";
+import { ArrowUp, Bot, User, Settings } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
@@ -18,6 +19,17 @@ export function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [currentAI, setCurrentAI] = useState<{provider: string, model: string}>({
+    provider: 'ollama-llama3',
+    model: 'llama3:8b'
+  });
+
+  const handleProviderChange = (provider: string, model: string) => {
+    setCurrentAI({ provider, model });
+    // Aquí podrías llamar a una función para cambiar el AI provider en el backend
+    console.log(`🔄 AI changed to: ${provider} - ${model}`);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,8 +161,29 @@ export function Chat() {
             <Bot className="h-6 w-6" />
             <h1 className="font-semibold">Jira MCP Chat</h1>
           </div>
-          <div className="ml-auto text-sm text-muted-foreground">
-            Ask me about Jira issues using natural language
+          <div className="flex items-center space-x-4 ml-auto">
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-muted-foreground">IA:</span>
+              <div className="flex items-center space-x-1 bg-muted px-2 py-1 rounded-md text-xs">
+                <span>
+                  {currentAI.provider === 'ollama-llama3' ? '🦙' : 
+                   currentAI.provider === 'gemini' ? '✨' : 
+                   currentAI.provider.includes('gpt') ? '🤖' : '🔧'}
+                </span>
+                <span>{currentAI.model}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSettings(!showSettings)}
+                className="h-6 w-6 p-0"
+              >
+                <Settings className="h-3 w-3" />
+              </Button>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Ask me about Jira issues using natural language
+            </div>
           </div>
         </div>
       </header>
@@ -236,6 +269,30 @@ export function Chat() {
           </div>
         )}
       </div>
+
+      {/* AI Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background border rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Configuración de IA</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSettings(false)}
+                className="h-6 w-6 p-0"
+              >
+                ✕
+              </Button>
+            </div>
+            <AISelector 
+              onProviderChange={handleProviderChange}
+              defaultProvider={currentAI.provider}
+              defaultModel={currentAI.model}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="border-t bg-background">
         <div className="container py-4 max-w-4xl">
