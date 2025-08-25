@@ -1,0 +1,117 @@
+{
+  "version": "1.0.0",
+  "description": "Configuración MCP para múltiples servers",
+  "servers": {
+    "jira": {
+      "name": "jira-mcp-server",
+      "version": "1.0.0",
+      "command": "node",
+      "args": ["./mcp-servers/jira/index.js"],
+      "env": {
+        "JIRA_BASE_URL": "${JIRA_BASE_URL}",
+        "JIRA_EMAIL": "${JIRA_EMAIL}",
+        "JIRA_API_TOKEN": "${JIRA_API_TOKEN}"
+      },
+      "capabilities": ["tools", "resources"],
+      "tools": [
+        {
+          "name": "search_jira_issues",
+          "description": "Search Jira issues using JQL",
+          "category": "search"
+        },
+        {
+          "name": "get_jira_projects", 
+          "description": "Get list of Jira projects",
+          "category": "info"
+        },
+        {
+          "name": "create_jira_issue",
+          "description": "Create a new Jira issue",
+          "category": "create"
+        }
+      ]
+    },
+    "github": {
+      "name": "github-mcp-server",
+      "version": "1.0.0", 
+      "command": "node",
+      "args": ["./mcp-servers/github/index.js"],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "GITHUB_OWNER": "${GITHUB_OWNER}"
+      },
+      "capabilities": ["tools"],
+      "tools": [
+        {
+          "name": "search_repositories",
+          "description": "Search GitHub repositories", 
+          "category": "search"
+        },
+        {
+          "name": "get_repository_issues",
+          "description": "Get issues from a repository",
+          "category": "info"
+        },
+        {
+          "name": "create_pull_request",
+          "description": "Create a pull request",
+          "category": "create"
+        }
+      ]
+    },
+    "slack": {
+      "name": "slack-mcp-server",
+      "version": "1.0.0",
+      "command": "node", 
+      "args": ["./mcp-servers/slack/index.js"],
+      "env": {
+        "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+        "SLACK_APP_TOKEN": "${SLACK_APP_TOKEN}"
+      },
+      "capabilities": ["tools"],
+      "tools": [
+        {
+          "name": "send_slack_message",
+          "description": "Send message to Slack channel",
+          "category": "communication"
+        },
+        {
+          "name": "get_slack_channels", 
+          "description": "List Slack channels",
+          "category": "info"
+        }
+      ]
+    }
+  },
+  "aggregation": {
+    "enabled": true,
+    "load_balancing": {
+      "enabled": true,
+      "strategy": "round_robin"
+    },
+    "fallback": {
+      "enabled": true,
+      "primary_servers": ["jira"],
+      "timeout_ms": 5000
+    },
+    "caching": {
+      "enabled": true,
+      "ttl_seconds": 300,
+      "max_entries": 1000
+    }
+  },
+  "compatibility": {
+    "cursor": {
+      "enabled": true,
+      "config_file": ".cursor-mcp.json"
+    },
+    "gemini": {
+      "enabled": true,
+      "function_calling": true
+    },
+    "claude": {
+      "enabled": true,
+      "stdio_transport": true
+    }
+  }
+}

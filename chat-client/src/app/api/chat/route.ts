@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { initMCP, processQuery } from "@/lib/mcp-client";
+
+// Elegir entre cliente directo o stdio MCP
+const USE_STDIO_MCP = process.env.USE_STDIO_MCP === 'true';
+
+// Importar el cliente apropiado
+const mcpClient = USE_STDIO_MCP 
+  ? require("@/lib/mcp-client")  // Cliente stdio real
+  : require("@/lib/direct-mcp-client");  // Cliente directo
+
+const { initMCP, processQuery } = mcpClient;
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,6 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('Processing query:', userQuery);
+    console.log('🔧 Using MCP Client:', USE_STDIO_MCP ? 'STDIO (Real MCP)' : 'Direct (Simplified)');
 
     await initMCP();
     console.log('MCP initialized successfully');
