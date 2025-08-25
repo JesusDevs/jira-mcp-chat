@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -20,20 +20,25 @@ export function Chat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [currentAI, setCurrentAI] = useState<{provider: string, model: string}>(() => {
-    // Cargar configuración guardada del localStorage
+  const [currentAI, setCurrentAI] = useState<{provider: string, model: string}>({
+    provider: 'gemini', 
+    model: 'gemini-2.0-flash-exp'
+  });
+
+  // Cargar configuración guardada después del primer render (evita hydration error)
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('aiConfig');
       if (saved) {
         try {
-          return JSON.parse(saved);
+          const config = JSON.parse(saved);
+          setCurrentAI(config);
         } catch (e) {
           console.warn('Error loading saved AI config:', e);
         }
       }
     }
-    return { provider: 'gemini', model: 'gemini-2.0-flash-exp' };
-  });
+  }, []);
 
   const handleProviderChange = (provider: string, model: string) => {
     setCurrentAI({ provider, model });
@@ -178,11 +183,7 @@ export function Chat() {
             <div className="flex items-center space-x-2">
               <span className="text-xs text-muted-foreground">IA:</span>
               <div className="flex items-center space-x-1 bg-muted px-2 py-1 rounded-md text-xs">
-                <span>
-                  {currentAI.provider === 'ollama-llama3' ? '🦙' : 
-                   currentAI.provider === 'gemini' ? '✨' : 
-                   currentAI.provider.includes('gpt') ? '🤖' : '🔧'}
-                </span>
+                <span>🤖</span>
                 <span>{currentAI.model}</span>
               </div>
               <Button
