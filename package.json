@@ -1,25 +1,47 @@
 {
   "name": "jira-mcp-chat",
-  "version": "1.0.0",
-  "description": "MCP Chat Client for Jira with Next.js",
+  "version": "2.0.0",
+  "description": "Universal MCP Chat Client - Conecta a cualquier servidor MCP (stdio/SSE/WebSocket)",
+  "type": "module",
   "scripts": {
     "dev": "npm run install-all && cd chat-client && npm run dev",
     "start": "npm run install-all && npm run dev",
+    
     "mcp-server": "cd mcp-server && node index.js",
     "mcp-test": "cd mcp-server && echo 'Testing MCP Server...' && node index.js",
+    "mcp-server-stdio": "cd mcp-server && echo '📡 Starting MCP Server for Cursor/stdio...' && node index.js",
+    "mcp-servers-start": "echo '🚀 Starting multiple MCP servers...' && npm run mcp-server-stdio",
+    
     "next-dev": "cd chat-client && npm run dev",
+    "chat-start": "npm run mcp-direct && cd chat-client && npm run dev",
+    
     "build": "npm run install-all && npm run build-mcp && npm run build-client",
     "build-mcp": "cd mcp-server && npm run build",
     "build-client": "cd chat-client && npm run build",
+    
     "setup": "npm run install-all",
     "setup-cursor": "cp .cursor-mcp.json ~/.cursor-mcp.json && echo 'Cursor MCP config installed'",
+    "setup-cursor-multi": "node scripts/setup-cursor-multi.js",
+    
     "mcp-stdio": "node switch-mcp-mode.js stdio",
     "mcp-direct": "node switch-mcp-mode.js direct",
-    "mcp-status": "grep USE_STDIO_MCP .env && echo 'Current mode in .env'",
-    "mcp-server-stdio": "cd mcp-server && echo '📡 Starting MCP Server for Cursor/stdio...' && node index.js",
-    "chat-start": "npm run mcp-direct && cd chat-client && npm run dev",
+    "mcp-status": "node scripts/mcp-status.js",
+    "mcp-config-validate": "node scripts/validate-mcp-config.js",
+    "mcp-config-list": "node scripts/list-mcp-servers.js",
+    "mcp-profile-switch": "node scripts/switch-profile.js",
+    
+    "test-mcp": "node scripts/test-mcp-connections.js",
+    "test-servers": "node scripts/test-multiple-servers.js",
     "test-tools": "node test-new-tools.js",
+    "test-connections": "node scripts/test-all-connections.js",
+    "test-all": "npm run test-mcp && npm run test-servers && npm run test-tools",
     "test-manual": "echo '🧪 Pruebas manuales:' && echo '1. Busca épicas del proyecto AIDEV' && echo '2. Busca todos los bugs' && echo '3. Crea un issue de prueba'",
+    
+    "status": "node scripts/system-status.js",
+    "health-check": "node scripts/health-check.js",
+    "env-check": "node scripts/check-environment.js",
+    "logs": "tail -f logs/*.log 2>/dev/null || echo 'No log files found'",
+    
     "install-all": "npm run install-root && npm run install-mcp && npm run install-client",
     "install-root": "npm install",
     "install-mcp": "cd mcp-server && npm install",
