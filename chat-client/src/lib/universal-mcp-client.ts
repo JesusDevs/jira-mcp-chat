@@ -1,512 +1,362 @@
-import { GoogleGenerativeAI, FunctionCallingMode } from '@google/generative-ai';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { spawn, ChildProcess } from 'child_process';
+import { WebSocketClientTransport } from '@modelcontextprotocol/sdk/client/websocket.js';
+import fs from 'fs';
 import path from 'path';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const MODEL_NAME = 'gemini-2.0-flash-exp';
-
-/**
- * Tipos de transporte MCP soportados
- */
-export type MCPTransportType = 'stdio' | 'sse' | 'websocket' | 'http';
-
-/**
- * Configuración de servidor MCP
- */
 export interface MCPServerConfig {
   name: string;
-  type: MCPTransportType;
+  description: string;
+  type: 'local' | 'remote';
+  enabled: boolean;
+  tools: string[];
+  
+  // Para servidores locales
   command?: string;
   args?: string[];
   env?: Record<string, string>;
+  
+  // Para servidores remotos
   url?: string;
-  port?: number;
-  path?: string;
+  auth?: {
+    type: 'bearer' | 'basic' | 'apikey';
+    token?: string;
+    username?: string;
+    password?: string;
+  };
 }
 
-/**
- * Cliente MCP Universal que soporta múltiples protocolos
- * Similar a la arquitectura de Cursor IDE
- */
-export class UniversalMCPClient {
-  private client: Client | null = null;
-  private transport: any = null;
-  private serverProcess: ChildProcess | null = null;
-  private isConnected = false;
-  private tools: any[] = [];
-  private config: MCPServerConfig;
+export interface MCPConfig {
+  mcpServers: Record<string, MCPServerConfig>;
+  defaultServer: string;
+  settings: {
+    autoConnect: boolean;
+    timeout: number;
+    retryAttempts: number;
+    loadBalancing: boolean;
+  };
+  ui: {
+    showServerStatus: boolean;
+    groupToolsByServer: boolean;
+    showToolDescriptions: boolean;
+  };
+}
 
-  constructor(config: MCPServerConfig) {
-    this.config = config;
-    console.log(`🔧 Initializing Universal MCP Client - ${config.type.toUpperCase()}`);
+export class UniversalMCPClient {
+  private clients: Map<string, Client> = new Map();
+  private transports: Map<string, any> = new Map();
+  private config: MCPConfig | null = null;
+  private tools: Map<string, any[]> = new Map();
+
+  constructor() {
+    this.loadConfiguration();
   }
 
-  async connect(): Promise<boolean> {
+  private loadConfiguration(): void {
     try {
-      if (this.isConnected) {
-        console.log('✅ MCP Client already connected');
-        return true;
-      }
-
-      console.log(`🚀 Connecting to MCP Server via ${this.config.type}...`);
-      
-      switch (this.config.type) {
-        case 'stdio':
-          return await this.connectStdio();
-        case 'sse':
-          return await this.connectSSE();
-        case 'websocket':
-          return await this.connectWebSocket();
-        case 'http':
-          return await this.connectHTTP();
-        default:
-          throw new Error(`Unsupported transport type: ${this.config.type}`);
+      const configPath = path.join(process.cwd(), 'mcp-config.json');
+      if (fs.existsSync(configPath)) {
+        const configData = fs.readFileSync(configPath, 'utf-8');
+        this.config = JSON.parse(configData);
+        console.log('✅ MCP Configuration loaded:', Object.keys(this.config.mcpServers));
+      } else {
+        console.warn('⚠️ MCP config file not found, using default Jira only');
+        this.config = this.getDefaultConfig();
       }
     } catch (error) {
-      console.error(`❌ Error connecting via ${this.config.type}:`, error);
+      console.error('❌ Error loading MCP config:', error);
+      this.config = this.getDefaultConfig();
+    }
+  }
+
+  private getDefaultConfig(): MCPConfig {
+    return {
+      mcpServers: {
+        jira: {
+          name: "Jira Management",
+          description: "Gestión de Jira",
+          type: 'local',
+          command: 'node',
+          args: ['/Users/jesus/jira-mcp-chat/mcp-server/index.js'],
+          enabled: true,
+          tools: ['get_jira_projects', 'search_jira_issues', 'get_recent_issues', 'create_jira_issue', 'search_epics', 'search_by_type'],
+          env: {
+            JIRA_BASE_URL: process.env.JIRA_BASE_URL || 'https://aetherdev.atlassian.net',
+            JIRA_EMAIL: process.env.JIRA_EMAIL || 'leon.rodriguez.ore@gmail.com',
+            JIRA_API_TOKEN: process.env.JIRA_API_TOKEN || 'ATATT3xFfGF0rLuQf5K8ySjmT60YdZBz_SB3d6Qx88CUa7B2PMa35CjUOQviQLxH9g0MmSqdpGjFlflTHIp8AIL1bBP-bcdBMSSOKbuvpsKXR0sXHJX-zim_Jfja9CJSmYz4lGiJ8xm5LyjnpE8nIEGyrKtWNnUEZ24iSHlz96HRAMjxUZiTZuQ=04299DBA'
+          }
+        },
+        "n8n-mcp": {
+          name: "n8n Workflow Management",
+          description: "Gestión de workflows y automatizaciones con n8n",
+          type: 'local',
+          command: 'npx',
+          args: ['n8n-mcp'],
+          enabled: true,
+          tools: ['search_nodes', 'get_node_info', 'list_nodes', 'get_node_documentation', 'search_templates', 'get_template'],
+          env: {
+            MCP_MODE: 'stdio',
+            LOG_LEVEL: 'error',
+            DISABLE_CONSOLE_OUTPUT: 'true'
+          }
+        }
+      },
+      defaultServer: 'jira',
+      settings: {
+        autoConnect: true,
+        timeout: 30000,
+        retryAttempts: 3,
+        loadBalancing: false
+      },
+      ui: {
+        showServerStatus: true,
+        groupToolsByServer: true,
+        showToolDescriptions: true
+      }
+    };
+  }
+
+  private resolveEnvironmentVariables(value: string): string {
+    return value.replace(/\$\{(\w+)\}/g, (match, varName) => {
+      return process.env[varName] || match;
+    });
+  }
+
+  private resolveServerConfig(config: MCPServerConfig): MCPServerConfig {
+    const resolved = { ...config };
+    
+    if (resolved.env) {
+      resolved.env = Object.fromEntries(
+        Object.entries(resolved.env).map(([key, value]) => [
+          key,
+          this.resolveEnvironmentVariables(value)
+        ])
+      );
+    }
+
+    if (resolved.url) {
+      resolved.url = this.resolveEnvironmentVariables(resolved.url);
+    }
+
+    return resolved;
+  }
+
+  async connectToServer(serverId: string): Promise<boolean> {
+    if (!this.config) {
+      console.error('❌ No MCP configuration available');
+      return false;
+    }
+
+    const serverConfig = this.config.mcpServers[serverId];
+    if (!serverConfig || !serverConfig.enabled) {
+      console.log(`⏭️ Server ${serverId} not enabled or not found`);
+      return false;
+    }
+
+    try {
+      console.log(`🔄 Connecting to MCP server: ${serverId}`);
+      
+      const resolvedConfig = this.resolveServerConfig(serverConfig);
+      
+      const client = new Client({
+        name: `universal-mcp-client-${serverId}`,
+        version: '1.0.0',
+      }, {
+        capabilities: {
+          tools: {},
+        },
+      });
+
+      let transport;
+
+      if (resolvedConfig.type === 'local') {
+        // Servidor local via stdio
+        if (!resolvedConfig.command || !resolvedConfig.args) {
+          throw new Error(`Invalid local server config for ${serverId}`);
+        }
+
+        transport = new StdioClientTransport({
+          command: resolvedConfig.command,
+          args: resolvedConfig.args,
+          env: {
+            ...process.env,
+            ...resolvedConfig.env
+          }
+        });
+      } else if (resolvedConfig.type === 'remote') {
+        // Servidor remoto via WebSocket
+        if (!resolvedConfig.url) {
+          throw new Error(`Invalid remote server config for ${serverId}`);
+        }
+
+        const wsOptions: any = {};
+        if (resolvedConfig.auth) {
+          // Agregar autenticación según el tipo
+          switch (resolvedConfig.auth.type) {
+            case 'bearer':
+              wsOptions.headers = {
+                'Authorization': `Bearer ${this.resolveEnvironmentVariables(resolvedConfig.auth.token || '')}`
+              };
+              break;
+            case 'basic':
+              const credentials = Buffer.from(
+                `${resolvedConfig.auth.username}:${resolvedConfig.auth.password}`
+              ).toString('base64');
+              wsOptions.headers = {
+                'Authorization': `Basic ${credentials}`
+              };
+              break;
+          }
+        }
+
+        transport = new WebSocketClientTransport(new URL(resolvedConfig.url));
+      } else {
+        throw new Error(`Unknown server type: ${resolvedConfig.type}`);
+      }
+
+      await client.connect(transport);
+      
+      // Cargar herramientas del servidor
+      const toolsResponse = await client.request({
+        method: 'tools/list',
+        params: {}
+      }, {} as any) as any;
+
+      const serverTools = toolsResponse.tools || [];
+      
+      this.clients.set(serverId, client);
+      this.transports.set(serverId, transport);
+      this.tools.set(serverId, serverTools);
+
+      console.log(`✅ Connected to ${serverId} with ${serverTools.length} tools:`, 
+        serverTools.map((t: any) => t.name));
+      
+      return true;
+    } catch (error) {
+      console.error(`❌ Failed to connect to ${serverId}:`, error);
       return false;
     }
   }
 
-  /**
-   * Conexión via stdio (como servidor local)
-   */
-  private async connectStdio(): Promise<boolean> {
-    if (!this.config.command) {
-      throw new Error('Command is required for stdio transport');
-    }
+  async connectToAllServers(): Promise<void> {
+    if (!this.config) return;
 
-    console.log('📡 Starting stdio MCP server...');
+    const connections = Object.keys(this.config.mcpServers)
+      .filter(serverId => this.config!.mcpServers[serverId].enabled)
+      .map(serverId => this.connectToServer(serverId));
+
+    await Promise.allSettled(connections);
     
-    // Resolver ruta del servidor
-    const serverPath = this.resolveServerPath();
-    if (!serverPath) {
-      throw new Error('MCP Server not found');
-    }
-
-    // Configurar variables de entorno
-    const env = {
-      ...process.env,
-      ...this.config.env
-    };
-
-    // Spawn del proceso del servidor
-    this.serverProcess = spawn(this.config.command, [serverPath, ...(this.config.args || [])], {
-      env,
-      stdio: ['pipe', 'pipe', 'pipe']
-    });
-
-    if (!this.serverProcess.stdout || !this.serverProcess.stdin) {
-      throw new Error('Failed to get stdio streams from server process');
-    }
-
-    // Crear transporte stdio
-    this.transport = new StdioClientTransport(
-      this.serverProcess.stdout,
-      this.serverProcess.stdin
-    );
-
-    // Crear cliente MCP
-    this.client = new Client({
-      name: `universal-mcp-client-${this.config.name}`,
-      version: '1.0.0'
-    }, {
-      capabilities: {}
-    });
-
-    // Conectar
-    await this.client.connect(this.transport);
-    
-    // Cargar herramientas
-    await this.loadTools();
-    
-    this.isConnected = true;
-    console.log(`✅ Connected to ${this.config.name} via stdio`);
-    return true;
+    const connectedServers = Array.from(this.clients.keys());
+    console.log(`🎯 Connected to ${connectedServers.length} MCP servers:`, connectedServers);
   }
 
-  /**
-   * Conexión via SSE (Server-Sent Events)
-   */
-  private async connectSSE(): Promise<boolean> {
-    if (!this.config.url) {
-      throw new Error('URL is required for SSE transport');
-    }
-
-    console.log(`📡 Connecting to SSE endpoint: ${this.config.url}`);
-    
-    // Crear transporte SSE
-    this.transport = new SSEClientTransport(this.config.url);
-
-    // Crear cliente MCP
-    this.client = new Client({
-      name: `universal-mcp-client-${this.config.name}`,
-      version: '1.0.0'
-    }, {
-      capabilities: {}
-    });
-
-    // Conectar
-    await this.client.connect(this.transport);
-    
-    // Cargar herramientas
-    await this.loadTools();
-    
-    this.isConnected = true;
-    console.log(`✅ Connected to ${this.config.name} via SSE`);
-    return true;
-  }
-
-  /**
-   * Conexión via WebSocket
-   */
-  private async connectWebSocket(): Promise<boolean> {
-    // TODO: Implementar WebSocket transport cuando esté disponible en SDK
-    console.log('🚧 WebSocket transport not yet implemented in MCP SDK');
-    return false;
-  }
-
-  /**
-   * Conexión via HTTP
-   */
-  private async connectHTTP(): Promise<boolean> {
-    // TODO: Implementar HTTP transport cuando esté disponible en SDK
-    console.log('🚧 HTTP transport not yet implemented in MCP SDK');
-    return false;
-  }
-
-  /**
-   * Resolver ruta del servidor MCP
-   */
-  private resolveServerPath(): string | null {
-    if (this.config.path) {
-      return path.resolve(this.config.path);
-    }
-
-    // Rutas por defecto para buscar el servidor
-    const possiblePaths = [
-      path.resolve(process.cwd(), '../mcp-server/index.js'),
-      path.resolve(process.cwd(), './mcp-server/index.js'),
-      path.resolve(__dirname, '../../mcp-server/index.js'),
-      path.resolve(__dirname, '../../../mcp-server/index.js'),
-    ];
-    
-    const fs = require('fs');
-    
-    for (const testPath of possiblePaths) {
-      if (fs.existsSync(testPath)) {
-        console.log('✅ Found MCP Server at:', testPath);
-        return testPath;
-      }
-    }
-    
-    return null;
-  }
-
-  /**
-   * Cargar herramientas disponibles del servidor
-   */
-  private async loadTools(): Promise<void> {
-    if (!this.client) {
-      throw new Error('Client not connected');
+  async executeToolCall(serverId: string, toolName: string, args: any): Promise<any> {
+    const client = this.clients.get(serverId);
+    if (!client) {
+      throw new Error(`Server ${serverId} not connected`);
     }
 
     try {
-      const response = await this.client.request({
-        method: 'tools/list',
-        params: {}
-      }, {});
-
-      this.tools = response.tools || [];
-      console.log(`🔧 Loaded ${this.tools.length} tools from ${this.config.name}`);
-    } catch (error) {
-      console.error('❌ Error loading tools:', error);
-      this.tools = [];
-    }
-  }
-
-  /**
-   * Ejecutar herramienta
-   */
-  async callTool(name: string, args: any = {}): Promise<any> {
-    if (!this.client || !this.isConnected) {
-      throw new Error('Client not connected');
-    }
-
-    try {
-      const response = await this.client.request({
+      console.log(`🔧 Executing ${toolName} on ${serverId} with args:`, args);
+      
+      const response = await client.request({
         method: 'tools/call',
         params: {
-          name,
+          name: toolName,
           arguments: args
         }
-      }, {});
+      }, {} as any) as any;
 
-      return response;
+      return {
+        server: serverId,
+        tool: toolName,
+        arguments: args,
+        result: response.content?.[0]?.text ? JSON.parse(response.content[0].text) : response
+      };
     } catch (error) {
-      console.error(`❌ Error calling tool ${name}:`, error);
+      console.error(`❌ Error executing ${toolName} on ${serverId}:`, error);
       throw error;
     }
   }
 
-  /**
-   * Desconectar cliente
-   */
+  getAllTools(): Record<string, any[]> {
+    const allTools: Record<string, any[]> = {};
+    
+    for (const [serverId, tools] of this.tools.entries()) {
+      allTools[serverId] = tools.map(tool => ({
+        ...tool,
+        serverId,
+        serverName: this.config?.mcpServers[serverId]?.name || serverId
+      }));
+    }
+    
+    return allTools;
+  }
+
+  getServerStatus(): Record<string, boolean> {
+    if (!this.config) return {};
+    
+    const status: Record<string, boolean> = {};
+    for (const serverId of Object.keys(this.config.mcpServers)) {
+      status[serverId] = this.clients.has(serverId);
+    }
+    return status;
+  }
+
   async disconnect(): Promise<void> {
-    try {
-      if (this.client) {
-        await this.client.close();
-        this.client = null;
+    for (const [serverId, client] of this.clients.entries()) {
+      try {
+        await client.close();
+        console.log(`✅ Disconnected from ${serverId}`);
+      } catch (error) {
+        console.error(`❌ Error disconnecting from ${serverId}:`, error);
       }
-
-      if (this.transport) {
-        this.transport = null;
-      }
-
-      if (this.serverProcess) {
-        this.serverProcess.kill();
-        this.serverProcess = null;
-      }
-
-      this.isConnected = false;
-      console.log(`✅ Disconnected from ${this.config.name}`);
-    } catch (error) {
-      console.error('❌ Error during disconnect:', error);
-    }
-  }
-
-  /**
-   * Verificar estado de conexión
-   */
-  isReady(): boolean {
-    return this.isConnected && this.client !== null;
-  }
-
-  /**
-   * Obtener herramientas disponibles
-   */
-  getTools(): any[] {
-    return this.tools;
-  }
-
-  /**
-   * Obtener información de la configuración
-   */
-  getConfig(): MCPServerConfig {
-    return { ...this.config };
-  }
-}
-
-/**
- * Gestor de múltiples servidores MCP
- */
-export class MCPServersManager {
-  private servers = new Map<string, UniversalMCPClient>();
-  private activeServer: string | null = null;
-
-  /**
-   * Agregar servidor MCP
-   */
-  addServer(name: string, config: MCPServerConfig): void {
-    const client = new UniversalMCPClient({ ...config, name });
-    this.servers.set(name, client);
-    console.log(`➕ Added MCP server: ${name} (${config.type})`);
-  }
-
-  /**
-   * Conectar a un servidor específico
-   */
-  async connectToServer(name: string): Promise<boolean> {
-    const server = this.servers.get(name);
-    if (!server) {
-      throw new Error(`Server ${name} not found`);
-    }
-
-    const connected = await server.connect();
-    if (connected) {
-      this.activeServer = name;
-      console.log(`🎯 Active server set to: ${name}`);
     }
     
-    return connected;
+    this.clients.clear();
+    this.transports.clear();
+    this.tools.clear();
   }
 
-  /**
-   * Obtener servidor activo
-   */
-  getActiveServer(): UniversalMCPClient | null {
-    if (!this.activeServer) return null;
-    return this.servers.get(this.activeServer) || null;
+  getConfig(): MCPConfig | null {
+    return this.config;
   }
 
-  /**
-   * Listar servidores disponibles
-   */
-  listServers(): string[] {
-    return Array.from(this.servers.keys());
+  isConnected(): boolean {
+    return this.clients.size > 0;
   }
 
-  /**
-   * Obtener todas las herramientas de todos los servidores
-   */
-  getAllTools(): Array<{ server: string; tools: any[] }> {
-    return Array.from(this.servers.entries()).map(([name, client]) => ({
-      server: name,
-      tools: client.getTools()
-    }));
+  getConnectedServers(): string[] {
+    return Array.from(this.clients.keys());
   }
 
-  /**
-   * Desconectar todos los servidores
-   */
-  async disconnectAll(): Promise<void> {
-    for (const [name, client] of this.servers) {
-      await client.disconnect();
-    }
-    this.activeServer = null;
-  }
-}
-
-/**
- * Función para crear configuraciones de servidor predefinidas
- */
-export function createServerConfigs(): Record<string, MCPServerConfig> {
-  return {
-    // Servidor Jira local
-    jira_local: {
-      name: 'jira_local',
-      type: 'stdio',
-      command: 'node',
-      path: '../mcp-server/index.js',
-      env: {
-        JIRA_BASE_URL: process.env.JIRA_BASE_URL || '',
-        JIRA_EMAIL: process.env.JIRA_EMAIL || '',
-        JIRA_API_TOKEN: process.env.JIRA_API_TOKEN || ''
+  async findToolByName(toolName: string): Promise<{ serverId: string; tool: any } | null> {
+    for (const [serverId, tools] of this.tools.entries()) {
+      const tool = tools.find((t: any) => t.name === toolName);
+      if (tool) {
+        return { serverId, tool };
       }
-    },
+    }
+    return null;
+  }
+
+  async executeAnyTool(toolName: string, args: any): Promise<any> {
+    const toolInfo = await this.findToolByName(toolName);
+    if (!toolInfo) {
+      throw new Error(`Tool ${toolName} not found in any connected server`);
+    }
     
-    // Servidor Jira remoto via SSE
-    jira_remote: {
-      name: 'jira_remote',
-      type: 'sse',
-      url: 'http://localhost:3001/sse'
-    },
-    
-    // Servidor genérico via stdio
-    generic_stdio: {
-      name: 'generic_stdio',
-      type: 'stdio',
-      command: 'node',
-      args: []
-    }
-  };
-}
-
-/**
- * Cliente MCP con integración Gemini para chat
- */
-export class MCPChatClient {
-  private mcpManager: MCPServersManager;
-  private geminiModel: any;
-
-  constructor() {
-    this.mcpManager = new MCPServersManager();
-    this.geminiModel = genAI.getGenerativeModel({
-      model: MODEL_NAME,
-      generationConfig: { temperature: 0.7 }
-    });
-  }
-
-  /**
-   * Configurar servidores MCP disponibles
-   */
-  async setupServers(configs: Record<string, MCPServerConfig>): Promise<void> {
-    for (const [name, config] of Object.entries(configs)) {
-      this.mcpManager.addServer(name, config);
-    }
-  }
-
-  /**
-   * Conectar a servidor específico
-   */
-  async connectToServer(serverName: string): Promise<boolean> {
-    return await this.mcpManager.connectToServer(serverName);
-  }
-
-  /**
-   * Procesar mensaje de chat con herramientas MCP
-   */
-  async processMessage(message: string): Promise<string> {
-    const activeServer = this.mcpManager.getActiveServer();
-    if (!activeServer || !activeServer.isReady()) {
-      return 'No hay servidor MCP conectado. Usa /connect <servidor> para conectar.';
-    }
-
-    try {
-      const tools = activeServer.getTools();
-      const functionDeclarations = this.convertToGeminiTools(tools);
-
-      const chat = this.geminiModel.startChat({
-        tools: [{ functionDeclarations }],
-        toolConfig: { functionCallingMode: FunctionCallingMode.AUTO }
-      });
-
-      const result = await chat.sendMessage(message);
-      const response = result.response;
-
-      // Procesar function calls
-      if (response.functionCalls()) {
-        const calls = response.functionCalls();
-        const toolResults = [];
-
-        for (const call of calls) {
-          const toolResult = await activeServer.callTool(call.name, call.args);
-          toolResults.push({
-            functionResponse: {
-              name: call.name,
-              response: toolResult
-            }
-          });
-        }
-
-        const followUp = await chat.sendMessage(toolResults);
-        return followUp.response.text();
-      }
-
-      return response.text();
-    } catch (error) {
-      console.error('❌ Error processing message:', error);
-      return `Error: ${error.message}`;
-    }
-  }
-
-  /**
-   * Convertir herramientas MCP a formato Gemini
-   */
-  private convertToGeminiTools(mcpTools: any[]): any[] {
-    return mcpTools.map(tool => ({
-      name: tool.name,
-      description: tool.description,
-      parameters: tool.inputSchema
-    }));
-  }
-
-  /**
-   * Obtener estado del sistema
-   */
-  getStatus() {
-    const activeServer = this.mcpManager.getActiveServer();
-    return {
-      servers: this.mcpManager.listServers(),
-      activeServer: activeServer?.getConfig().name || null,
-      connected: activeServer?.isReady() || false,
-      tools: activeServer?.getTools().length || 0
-    };
+    return this.executeToolCall(toolInfo.serverId, toolName, args);
   }
 }
 
-// Exportar todo
-export default MCPChatClient;
+// Singleton instance
+let universalClient: UniversalMCPClient | null = null;
+
+export function getUniversalMCPClient(): UniversalMCPClient {
+  if (!universalClient) {
+    universalClient = new UniversalMCPClient();
+  }
+  return universalClient;
+}

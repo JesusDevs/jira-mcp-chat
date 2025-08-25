@@ -327,7 +327,7 @@ export class UniversalAIClient {
         `Tool: ${tool.name} - ${tool.description}`
       ).join('\n');
       
-      const systemMessage = {
+      const systemMessage: AIMessage = {
         role: 'system',
         content: `You have access to these tools:\n${toolsInfo}\n\nWhen you need to use a tool, respond in this format: TOOL_CALL:tool_name:{"arg1":"value1","arg2":"value2"}`
       };

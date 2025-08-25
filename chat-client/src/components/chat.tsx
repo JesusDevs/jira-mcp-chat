@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AutoResizeTextarea } from "@/components/autoresize-textarea";
 import AISelector from "@/components/ai-selector";
-import { ArrowUp, Bot, User, Settings } from "lucide-react";
+import { MCPStatus } from "@/components/mcp-status";
+import { ArrowUp, Bot, User, Settings, Server } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
@@ -20,13 +21,16 @@ export function Chat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [activeTab, setActiveTab] = useState<'ai' | 'mcp'>('ai');
   const [currentAI, setCurrentAI] = useState<{provider: string, model: string}>({
     provider: 'gemini', 
     model: 'gemini-2.0-flash-exp'
   });
+  const [isHydrated, setIsHydrated] = useState(false);
 
   // Cargar configuración guardada después del primer render (evita hydration error)
   useEffect(() => {
+    setIsHydrated(true);
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('aiConfig');
       if (saved) {
@@ -184,7 +188,7 @@ export function Chat() {
               <span className="text-xs text-muted-foreground">IA:</span>
               <div className="flex items-center space-x-1 bg-muted px-2 py-1 rounded-md text-xs">
                 <span>🤖</span>
-                <span>AI Model</span>
+                <span>{isHydrated ? currentAI.model : 'AI Model'}</span>
               </div>
               <Button
                 variant="ghost"
@@ -284,12 +288,12 @@ export function Chat() {
         )}
       </div>
 
-      {/* AI Settings Modal */}
+      {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background border rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+          <div className="bg-background border rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Configuración de IA</h2>
+              <h2 className="text-lg font-semibold">Configuración del Sistema</h2>
               <Button
                 variant="ghost"
                 size="sm"
@@ -299,11 +303,47 @@ export function Chat() {
                 ✕
               </Button>
             </div>
-            <AISelector 
-              onProviderChange={handleProviderChange}
-              defaultProvider="gemini"
-              defaultModel="gemini-2.0-flash-exp"
-            />
+            
+            {/* Tabs */}
+            <div className="flex space-x-1 mb-6 border-b">
+              <Button
+                variant={activeTab === 'ai' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('ai')}
+                className="rounded-b-none"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Configuración IA
+              </Button>
+              <Button
+                variant={activeTab === 'mcp' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('mcp')}
+                className="rounded-b-none"
+              >
+                <Server className="h-4 w-4 mr-2" />
+                Servidores MCP
+              </Button>
+            </div>
+            
+            {/* Tab Content */}
+            <div className="space-y-4">
+              {activeTab === 'ai' && (
+                <div>
+                  <AISelector 
+                    onProviderChange={handleProviderChange}
+                    defaultProvider="gemini"
+                    defaultModel="gemini-2.0-flash-exp"
+                  />
+                </div>
+              )}
+              
+              {activeTab === 'mcp' && (
+                <div>
+                  <MCPStatus />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

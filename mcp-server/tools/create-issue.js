@@ -20,7 +20,8 @@ export class CreateIssueTool extends JiraToolBase {
         properties: {
           project: {
             type: 'string',
-            description: 'Project key where to create the issue (e.g., "AIDEV", "SOP")',
+            description: 'Project key where to create the issue (e.g., "AIDEV", "SOP"). Defaults to "AIDEV" if not specified.',
+            default: 'AIDEV',
           },
           summary: {
             type: 'string',
@@ -49,7 +50,7 @@ export class CreateIssueTool extends JiraToolBase {
             description: 'Parent issue key if creating a subtask (e.g., "AIDEV-123")',
           },
         },
-        required: ['project', 'summary'],
+        required: ['summary'],
       },
     };
   }
@@ -62,7 +63,7 @@ export class CreateIssueTool extends JiraToolBase {
   async execute(args) {
     try {
       const {
-        project,
+        project: inputProject,
         summary,
         description = '',
         issueType = 'Task',
@@ -71,10 +72,17 @@ export class CreateIssueTool extends JiraToolBase {
         parentKey
       } = args;
 
+      // Usar proyecto por defecto si no se especifica
+      const project = inputProject || 'AIDEV';
+
       console.error(`📝 Creating ${issueType} in project ${project}...`);
 
       // Obtener metadatos del proyecto para validar tipos de issue
       const projectMeta = await this.getProjectMetadata(project);
+      
+      if (!projectMeta) {
+        throw new Error(`Project "${project}" not found or not accessible`);
+      }
       
       // Encontrar el tipo de issue correcto
       const issueTypeId = this.findIssueTypeId(projectMeta, issueType);

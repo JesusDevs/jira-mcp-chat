@@ -1,5 +1,10 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, FunctionCallingMode, SchemaType } from '@google/generative-ai';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import axios from 'axios';
+import path from 'path';
+import { z } from 'zod';
+import fs from 'fs';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 let MODEL_NAME = 'gemini-2.0-flash-exp';
@@ -71,11 +76,12 @@ async function processOllamaQuery(messagesInput: any[]) {
   });
   
   // Preparar el prompt con información de tools
-  const toolsInfo = tools.map(tool => 
+  const activeTools = getActiveTools();
+  const toolsInfo = activeTools.map(tool => 
     `- ${tool.name}: ${tool.description}`
   ).join('\n');
   
-  const systemPrompt = `Eres un asistente de Jira con las siguientes herramientas disponibles:
+  const systemPrompt = `Eres un asistente de tools con las siguientes herramientas disponibles:
 
 ${toolsInfo}
 
@@ -119,11 +125,13 @@ Responde siempre en español y sé útil con las consultas de Jira.`;
     let toolResponses = [];
 
     // Detectar y ejecutar tool calls
-    const toolCallMatch = content.match(/TOOL_CALL:(\w+):(\{.*?\})/);
+    const toolCallMatch = content.match(/TOOL_CALL:(\w+):(\{.*?\})(?:\n|$)/s);
     if (toolCallMatch) {
+      const toolName = toolCallMatch[1]; // Mover fuera del try para que esté disponible en catch
       try {
-        const toolName = toolCallMatch[1];
-        const toolArgs = JSON.parse(toolCallMatch[2]);
+        // Convertir comillas simples a dobles para JSON válido
+        let toolArgsStr = toolCallMatch[2].replace(/'/g, '"');
+        const toolArgs = JSON.parse(toolArgsStr);
         
         console.log(`🔧 Executing tool: ${toolName} with args:`, toolArgs);
         
@@ -135,7 +143,7 @@ Responde siempre en español y sé útil con las consultas de Jira.`;
         
         // Remover el tool call del contenido y agregar resultado
         content = content.replace(toolCallMatch[0], '').trim();
-        content += `\n\n✅ Ejecuté la herramienta ${toolName} y obtuve ${toolResult.data ? `${toolResult.data.length} resultados` : 'resultados'}.`;
+        content += `\n\n✅ Ejecuté la herramienta ${toolName} y obtuve ${(toolResult as any).data ? `${(toolResult as any).data.length} resultados` : 'resultados'}.`;
         
       } catch (e) {
         console.error('❌ [Tool Execution Error] Failed to parse/execute tool call from Ollama response:');
@@ -189,29 +197,293 @@ Responde siempre en español y sé útil con las consultas de Jira.`;
  * sin proceso separado - más simple y confiable para Next.js
  */
 
-// Herramientas MCP implementadas directamente
-const tools = [
+// Variables para descubrimiento dinámico de herramientas (como Cursor)
+interface MCPServerConnection {
+  id: string;
+  name: string;
+  client: Client;
+  transport: StdioClientTransport;
+  tools: any[];
+  status: 'connected' | 'connecting' | 'disconnected' | 'error';
+  lastError?: string;
+}
+
+let mcpServers: Map<string, MCPServerConnection> = new Map();
+let discoveredTools: any[] = [];
+let isConnectedToMCP = false;
+
+// Función para cargar configuración de servidores MCP
+function loadMCPServersConfig(): any[] {
+  try {
+    // Primero intentar cargar desde mcp-config.json
+    const configPath = path.resolve(process.cwd(), 'mcp-config.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      const servers = Object.entries(config.mcpServers || {}).map(([id, server]: [string, any]) => ({
+        id,
+        ...server
+      }));
+      console.log(`📋 Cargados ${servers.length} servidores desde mcp-config.json`);
+      return servers;
+    }
+  } catch (error) {
+    console.warn('⚠️ Error cargando mcp-config.json:', error.message);
+  }
+
+  // Fallback: servidor Jira por defecto
+  return [{
+    id: 'jira',
+    name: 'Jira Management',
+    type: 'local',
+    command: 'node',
+    args: ['../mcp-server/index.js'],
+    enabled: true
+  }];
+}
+
+// Función para conectar a un servidor MCP específico
+async function connectToMCPServer(serverId: string, serverConfig: any): Promise<MCPServerConnection | null> {
+  const serverName = serverConfig.name || serverId;
+  
+  try {
+    console.log(`🔄 Conectando al servidor MCP: ${serverName} (${serverId})`);
+    
+    const client = new Client({
+      name: `jira-chat-client-${serverId}`,
+      version: '1.0.0',
+    }, {
+      capabilities: {
+        tools: {},
+      },
+    });
+
+    let transport;
+    
+    if (serverConfig.type === 'local') {
+      const serverPath = serverConfig.args?.[0]?.startsWith('/') 
+        ? serverConfig.args[0]
+        : path.resolve(process.cwd(), serverConfig.args?.[0] || '../mcp-server/index.js');
+      
+      transport = new StdioClientTransport({
+        command: serverConfig.command || 'node',
+        args: [serverPath],
+        env: {
+          ...process.env,
+          JIRA_BASE_URL: process.env.JIRA_BASE_URL,
+          JIRA_EMAIL: process.env.JIRA_EMAIL,
+          JIRA_API_TOKEN: process.env.JIRA_API_TOKEN,
+          ...serverConfig.env
+        }
+      });
+    } else {
+      throw new Error(`Tipo de servidor ${serverConfig.type} no soportado aún`);
+    }
+
+    await client.connect(transport);
+    
+    // Descubrir herramientas disponibles
+    const toolsResponse = await client.request({
+      method: 'tools/list',
+      params: {}
+    }, z.any()) as any;
+
+    const tools = toolsResponse.tools || [];
+    
+    const connection: MCPServerConnection = {
+      id: serverId,
+      name: serverName,
+      client,
+      transport,
+      tools,
+      status: 'connected'
+    };
+
+    console.log(`✅ Conectado a ${serverName} - ${tools.length} herramientas:`, 
+      tools.map((t: any) => t.name));
+    
+    return connection;
+  } catch (error) {
+    console.error(`❌ Error conectando a ${serverName}:`, error.message);
+    return {
+      id: serverId,
+      name: serverName,
+      client: null as any,
+      transport: null as any,
+      tools: [],
+      status: 'error',
+      lastError: error.message
+    };
+  }
+}
+
+// Función para conectar a todos los servidores MCP configurados
+async function connectToAllMCPServers(): Promise<boolean> {
+  const serversConfig = loadMCPServersConfig();
+  const enabledServers = serversConfig.filter(server => server.enabled !== false);
+  
+  console.log(`🔄 Conectando a ${enabledServers.length} servidores MCP configurados...`);
+  
+  const connectionPromises = enabledServers.map(async (serverConfig) => {
+    const connection = await connectToMCPServer(serverConfig.id, serverConfig);
+    if (connection) {
+      mcpServers.set(serverConfig.id, connection);
+    }
+    return connection;
+  });
+
+  const connections = await Promise.allSettled(connectionPromises);
+  const successfulConnections = connections
+    .filter(result => result.status === 'fulfilled' && result.value?.status === 'connected')
+    .map(result => (result as PromiseFulfilledResult<MCPServerConnection>).value);
+
+  // Consolidar todas las herramientas de todos los servidores
+  discoveredTools = [];
+  for (const connection of successfulConnections) {
+    discoveredTools.push(...connection.tools.map(tool => ({
+      ...tool,
+      serverId: connection.id,
+      serverName: connection.name
+    })));
+  }
+
+  isConnectedToMCP = successfulConnections.length > 0;
+
+  if (isConnectedToMCP) {
+    console.log(`✅ Conectado a ${successfulConnections.length}/${enabledServers.length} servidores MCP`);
+    console.log(`🔧 Total de herramientas descubiertas: ${discoveredTools.length}`);
+    
+    // Mostrar resumen por servidor
+    for (const connection of successfulConnections) {
+      console.log(`  📡 ${connection.name}: ${connection.tools.length} tools`);
+    }
+    
+    return true;
+  } else {
+    console.error('❌ No se pudo conectar a ningún servidor MCP');
+    console.log('📋 Usando herramientas estáticas como fallback');
+    return false;
+  }
+}
+
+// Función para obtener las herramientas activas (descubiertas o estáticas)
+function getActiveTools(): any[] {
+  if (isConnectedToMCP && discoveredTools.length > 0) {
+    // Convertir herramientas MCP al formato de Gemini
+    return discoveredTools.map(tool => ({
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.inputSchema || {
+        type: SchemaType.OBJECT,
+        properties: {},
+        required: []
+      }
+    }));
+  }
+  
+  return staticTools;
+}
+
+// Funciones de utilidad para gestión de servidores MCP
+export function getMCPServerStatus(): Record<string, any> {
+  const status: Record<string, any> = {};
+  
+  for (const [serverId, connection] of mcpServers.entries()) {
+    status[serverId] = {
+      id: connection.id,
+      name: connection.name,
+      status: connection.status,
+      toolsCount: connection.tools.length,
+      tools: connection.tools.map(t => t.name),
+      lastError: connection.lastError
+    };
+  }
+  
+  return status;
+}
+
+export function getConnectedServersInfo(): string[] {
+  const connectedServers: string[] = [];
+  
+  for (const [serverId, connection] of mcpServers.entries()) {
+    if (connection.status === 'connected') {
+      connectedServers.push(`${connection.name} (${connection.tools.length} tools)`);
+    }
+  }
+  
+  return connectedServers;
+}
+
+export function getAllDiscoveredTools(): any[] {
+  return discoveredTools;
+}
+
+// Función para ejecutar herramientas en el servidor MCP real
+async function executeToolOnMCPServer(toolName: string, args: any): Promise<any> {
+  if (!isConnectedToMCP || mcpServers.size === 0) {
+    throw new Error('No hay conexión a servidores MCP');
+  }
+
+  // Encontrar en qué servidor está la herramienta
+  const toolInfo = discoveredTools.find(tool => tool.name === toolName);
+  if (!toolInfo) {
+    throw new Error(`Herramienta ${toolName} no encontrada en ningún servidor`);
+  }
+
+  const serverConnection = mcpServers.get(toolInfo.serverId);
+  if (!serverConnection || serverConnection.status !== 'connected') {
+    throw new Error(`Servidor ${toolInfo.serverId} no está conectado`);
+  }
+
+  try {
+    console.log(`🎯 Ejecutando ${toolName} en servidor: ${serverConnection.name}`);
+    
+    const response = await serverConnection.client.request({
+      method: 'tools/call',
+      params: {
+        name: toolName,
+        arguments: args
+      }
+    }, z.any()) as any;
+
+    const result = response.content?.[0]?.text ? JSON.parse(response.content[0].text) : response;
+    return {
+      name: toolName,
+      arguments: args,
+      result: result,
+      executedOn: {
+        serverId: serverConnection.id,
+        serverName: serverConnection.name
+      }
+    };
+  } catch (error) {
+    console.error(`❌ Error ejecutando ${toolName} en ${serverConnection.name}:`, error);
+    throw error;
+  }
+}
+
+// Herramientas estáticas (fallback si no hay conexión MCP)
+const staticTools = [
   {
     name: 'search_jira_issues',
     description: 'Search Jira issues using JQL, keywords, or issue keys. Smart query detection for flexible search.',
     parameters: {
-      type: 'object',
+      type: SchemaType.OBJECT,
       properties: {
         query: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Search query - can be JQL (project = TEST), issue key (PROJ-123), or keywords for text search',
         },
         maxResults: {
-          type: 'number',
+          type: SchemaType.NUMBER,
           description: 'Maximum number of results to return (default: 20, max: 100)',
           default: 20,
         },
         status: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Optional: Filter by status (Open, In Progress, Done, etc.)',
         },
         project: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Optional: Filter by specific project key (e.g., "TEST", "PROJ")',
         },
       },
@@ -222,10 +494,10 @@ const tools = [
     name: 'get_jira_projects',
     description: 'Get list of all available Jira projects',
     parameters: {
-      type: 'object',
+      type: SchemaType.OBJECT,
       properties: {
         recent: {
-          type: 'boolean',
+          type: SchemaType.BOOLEAN,
           description: 'Only return recent projects (default: false)',
           default: false,
         },
@@ -236,15 +508,15 @@ const tools = [
     name: 'get_recent_issues',
     description: 'Get recent issues from all accessible projects, ordered by creation date',
     parameters: {
-      type: 'object',
+      type: SchemaType.OBJECT,
       properties: {
         days: {
-          type: 'number',
+          type: SchemaType.NUMBER,
           description: 'Number of days back to search (default: 30)',
           default: 30,
         },
         maxResults: {
-          type: 'number',
+          type: SchemaType.NUMBER,
           description: 'Maximum number of results (default: 10)',
           default: 10,
         },
@@ -255,36 +527,36 @@ const tools = [
     name: 'create_jira_issue',
     description: 'Create a new Jira issue or subtask. Can create Stories, Tasks, Bugs, Subtasks, etc.',
     parameters: {
-      type: 'object',
+      type: SchemaType.OBJECT,
       properties: {
         project: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Project key where to create the issue (e.g., "AIDEV", "SOP")',
         },
         issueType: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Type of issue: Story, Task, Bug, Subtask, Epic (default: Task)',
           default: 'Task',
         },
         summary: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Brief summary/title of the issue',
         },
         description: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Detailed description of the issue (optional)',
         },
         priority: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Priority: Highest, High, Medium, Low, Lowest (default: Medium)',
           default: 'Medium',
         },
         assignee: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Email or username of assignee (optional, leave empty for unassigned)',
         },
         parentKey: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Parent issue key if creating a subtask (e.g., "AIDEV-123")',
         },
       },
@@ -295,22 +567,22 @@ const tools = [
     name: 'search_epics',
     description: 'Search specifically for Epics in Jira projects. Find epics by name, project, or status.',
     parameters: {
-      type: 'object',
+      type: SchemaType.OBJECT,
       properties: {
         query: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Search term for epic name or JQL query',
         },
         project: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Filter by specific project key (e.g., "AIDEV")',
         },
         status: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Filter by epic status (e.g., "To Do", "In Progress", "Done")',
         },
         maxResults: {
-          type: 'number',
+          type: SchemaType.NUMBER,
           description: 'Maximum number of results (default: 20)',
           default: 20,
         },
@@ -321,30 +593,30 @@ const tools = [
     name: 'search_by_type',
     description: 'Search issues by specific issue type (Bug, Story, Task, Subtask, etc.) with advanced filtering.',
     parameters: {
-      type: 'object',
+      type: SchemaType.OBJECT,
       properties: {
         issueType: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Issue type to search: Bug, Story, Task, Subtask, Epic, etc.',
         },
         project: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Filter by project key (optional)',
         },
         status: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Filter by status (optional)',
         },
         assignee: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Filter by assignee (optional). Use "currentUser()" for your issues',
         },
         query: {
-          type: 'string',
+          type: SchemaType.STRING,
           description: 'Additional search text in summary/description (optional)',
         },
         maxResults: {
-          type: 'number',
+          type: SchemaType.NUMBER,
           description: 'Maximum number of results (default: 20)',
           default: 20,
         },
@@ -426,7 +698,7 @@ function buildJQLFromQuery(query: string, project?: string, status?: string): st
 }
 
 export async function initMCP() {
-  console.log('🚀 Initializing Direct MCP Client...');
+  console.log('🚀 Initializing MCP Client with Dynamic Tool Discovery...');
   console.log('Gemini API Key:', process.env.GEMINI_API_KEY ? 'Present' : 'Missing');
   console.log('Using model:', MODEL_NAME);
   
@@ -439,7 +711,21 @@ export async function initMCP() {
     return false;
   }
   
-  console.log(`✅ Direct MCP Client ready with ${tools.length} tools:`, tools.map(t => t.name).join(', '));
+  // Intentar conectar a todos los servidores MCP configurados
+  const mcpConnected = await connectToAllMCPServers();
+  
+  if (mcpConnected && discoveredTools.length > 0) {
+    const connectedServers = getConnectedServersInfo();
+    console.log(`✅ MCP Client ready with ${discoveredTools.length} discovered tools from ${connectedServers.length} servers`);
+    console.log(`📡 Connected servers: ${connectedServers.join(', ')}`);
+    console.log(`🔧 All tools: ${discoveredTools.map(t => `${t.name}@${t.serverName}`).join(', ')}`);
+    console.log('🎯 Mode: Real MCP Servers (like Cursor)');
+  } else {
+    console.log(`⚠️ Fallback: Using ${staticTools.length} static tools:`, 
+      staticTools.map(t => t.name).join(', '));
+    console.log('🎯 Mode: Static Tools (fallback)');
+  }
+  
   return true;
 }
 
@@ -447,7 +733,20 @@ export async function executeToolCall(toolCall: any) {
   const toolName = toolCall.name;
   const toolArgs = toolCall.args || {};
 
-  console.log(`🔧 Executing direct tool: ${toolName}`, toolArgs);
+  console.log(`🔧 Executing tool: ${toolName}`, toolArgs);
+
+  // Si estamos conectados al servidor MCP real, usarlo (como Cursor)
+  if (isConnectedToMCP && mcpServers.size > 0) {
+    console.log('🎯 Executing via Real MCP Server (like Cursor)');
+    try {
+      return await executeToolOnMCPServer(toolName, toolArgs);
+    } catch (error) {
+      console.error(`❌ MCP Server failed, falling back to static implementation`);
+      // Continuar con implementación estática como fallback
+    }
+  }
+
+  console.log('🎯 Executing via Static Implementation (fallback)');
 
   try {
     if (toolName === 'search_jira_issues') {
@@ -583,7 +882,7 @@ export async function executeToolCall(toolCall: any) {
       console.log(`Creating Jira issue: ${issueType} in ${project}`);
 
       // Construir el payload del issue
-      const issueData = {
+      const issueData: any = {
         fields: {
           project: { key: project },
           summary: summary,
@@ -860,14 +1159,15 @@ export async function processQuery(messagesInput: any[]) {
   }
 
   // Para Gemini (comportamiento original)
+  const activeTools = getActiveTools();
   const model = genAI.getGenerativeModel({
     model: MODEL_NAME,
-    tools: {
-      functionDeclarations: tools,
-    },
+    tools: [{
+      functionDeclarations: activeTools,
+    }],
     toolConfig: {
       functionCallingConfig: {
-        mode: "auto",
+        mode: FunctionCallingMode.AUTO,
       },
     },
   });
@@ -889,16 +1189,18 @@ export async function processQuery(messagesInput: any[]) {
 ## 🎯 Capabilities:
 
 ### **Search Examples:**
-- Issue keys: "AIDEV-6", "PROJ-123"
-- Keywords: "bug login", "payment integration"
-- JQL: "status = Open", "created >= -7d"
+- Issue keys: "PROJ-123", "DEV-456", "MKT-789"
+- Keywords: "bug login", "payment integration", "feature request"
+- JQL: "status = Open", "created >= -7d", "assignee = currentUser()"
 - By type: "busca todos los bugs" → use search_by_type with issueType="Bug"
-- Epics: "épicas del proyecto AIDEV" → use search_epics with project="AIDEV"
+- Epics: "épicas del proyecto MARKETING" → use search_epics with project="MARKETING"
+- Projects: "proyectos de desarrollo" → use get_jira_projects
 
 ### **Creation Examples:**
-- "Crea un bug en AIDEV sobre el login"
-- "Crea una subtarea para AIDEV-123"
-- "Crea una historia de usuario en SOP"
+- "Crea un bug en DESARROLLO sobre el login"
+- "Crea una subtarea para DEV-123"
+- "Crea una historia de usuario en MARKETING"
+- "Crea una épica para el proyecto VENTAS"
 
 ### **Smart Routing:**
 - For general searches → search_jira_issues

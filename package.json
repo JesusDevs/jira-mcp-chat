@@ -45,7 +45,12 @@
     "install-all": "npm run install-root && npm run install-mcp && npm run install-client",
     "install-root": "npm install",
     "install-mcp": "cd mcp-server && npm install",
-    "install-client": "cd chat-client && npm install"
+    "install-client": "cd chat-client && npm install",
+
+    "config-check": "echo '🔍 Verificando configuración...' && cat .env 2>/dev/null | grep -E '^(JIRA_|DEFAULT_|ORGANIZATION_)' || echo '⚠️ Archivo .env no encontrado'",
+    "env-setup": "cp env.example .env && echo '📝 Archivo .env creado desde ejemplo. Edítalo con tus credenciales.'",
+    "validate-jira": "node -e \"require('dotenv').config(); const axios = require('axios'); const auth = Buffer.from(process.env.JIRA_EMAIL + ':' + process.env.JIRA_API_TOKEN).toString('base64'); axios.get(process.env.JIRA_BASE_URL + '/rest/api/3/myself', {headers: {'Authorization': 'Basic ' + auth}}).then(r => console.log('✅ Jira conectado:', r.data.displayName)).catch(e => console.log('❌ Error Jira:', e.message))\"",
+    "quick-start": "npm run env-setup && echo '⚡ Configuración rápida completada. Edita el archivo .env y ejecuta: npm run dev'"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
