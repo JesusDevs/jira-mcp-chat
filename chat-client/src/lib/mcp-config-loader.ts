@@ -207,9 +207,12 @@ export class MCPConfigLoader {
           args: serverConfig.args,
           env: { ...serverConfig.env, ...profileConfig.env },
           url: serverConfig.url,
-          port: serverConfig.port,
-          path: serverConfig.path
-        };
+          description: serverConfig.description || '',
+          enabled: serverConfig.enabled !== false,
+          tools: serverConfig.tools || [],
+          ...(serverConfig as any).port && { port: (serverConfig as any).port },
+          ...(serverConfig as any).path && { path: (serverConfig as any).path }
+        } as unknown as MCPServerConfig;
       } else {
         console.warn(`Server '${serverName}' in profile '${profile}' not found`);
       }
@@ -236,9 +239,12 @@ export class MCPConfigLoader {
         args: serverConfig.args,
         env: serverConfig.env,
         url: serverConfig.url,
-        port: serverConfig.port,
-        path: serverConfig.path
-      };
+        description: serverConfig.description || '',
+        enabled: serverConfig.enabled !== false,
+        tools: serverConfig.tools || [],
+        ...(serverConfig as any).port && { port: (serverConfig as any).port },
+        ...(serverConfig as any).path && { path: (serverConfig as any).path }
+      } as unknown as MCPServerConfig;
     }
 
     return servers;

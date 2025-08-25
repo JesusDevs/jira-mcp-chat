@@ -125,7 +125,7 @@ Responde siempre en español y sé útil con las consultas de Jira.`;
     let toolResponses = [];
 
     // Detectar y ejecutar tool calls
-    const toolCallMatch = content.match(/TOOL_CALL:(\w+):(\{.*?\})(?:\n|$)/s);
+    const toolCallMatch = content.match(/TOOL_CALL:(\w+):(\{[^}]*\})(?:\n|$)/);
     if (toolCallMatch) {
       const toolName = toolCallMatch[1]; // Mover fuera del try para que esté disponible en catch
       try {

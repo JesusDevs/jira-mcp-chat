@@ -104,7 +104,7 @@ export class RealMCPClient {
       const response = await this.client.request({
         method: 'tools/list',
         params: {}
-      });
+      }, {}) as any;
 
       console.log('📡 Raw MCP response:', JSON.stringify(response, null, 2));
       this.tools = response.tools || [];
@@ -143,7 +143,7 @@ export class RealMCPClient {
           name: toolName,
           arguments: args
         }
-      });
+      }, {}) as any;
 
       console.log(`✅ Tool ${toolName} executed successfully`);
       return {

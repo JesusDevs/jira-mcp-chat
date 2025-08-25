@@ -81,9 +81,9 @@ export async function processQuery(messagesInput: any[]) {
 
   const model = genAI.getGenerativeModel({
     model: MODEL_NAME,
-    tools: {
+    tools: [{
       functionDeclarations: mcpTools,
-    },
+    }],
     toolConfig: {
       functionCallingConfig: {
         mode: FunctionCallingMode.AUTO,
