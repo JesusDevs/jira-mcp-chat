@@ -1,0 +1,46 @@
+{
+  "name": "@jira-mcp/tools",
+  "version": "1.0.0",
+  "description": "Paquete de herramientas de Jira para MCP Server - Herramientas organizadas y modulares",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./base": "./base.js",
+    "./search-issues": "./search-issues.js",
+    "./get-projects": "./get-projects.js",
+    "./recent-issues": "./recent-issues.js",
+    "./create-issue": "./create-issue.js",
+    "./search-epics": "./search-epics.js",
+    "./search-by-type": "./search-by-type.js"
+  },
+  "scripts": {
+    "test": "echo \"No tests specified for tools package\" && exit 0"
+  },
+  "keywords": [
+    "jira",
+    "mcp",
+    "tools",
+    "api",
+    "modular",
+    "server"
+  ],
+  "author": "Jesus Rodriguez",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.11.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JesusDevs/jira-mcp-chat.git",
+    "directory": "mcp-server/tools"
+  },
+  "files": [
+    "*.js",
+    "README.md"
+  ]
+}
