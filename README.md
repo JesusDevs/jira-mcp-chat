@@ -1,242 +1,376 @@
-# Jira MCP Chat 🤖
+# 🚀 Jira MCP Chat - Sistema Completo de Integración
 
-Un cliente de chat inteligente que te permite interactuar con Jira usando lenguaje natural. Construido con MCP (Model Context Protocol), Next.js y Gemini AI.
+Un cliente de chat inteligente profesional que te permite interactuar con Jira usando lenguaje natural. Construido con MCP (Model Context Protocol), Next.js y Gemini AI con arquitectura escalable y documentación completa.
 
-![Chat Demo](https://img.shields.io/badge/Status-Functional-brightgreen)
+![Chat Demo](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
 ![Next.js](https://img.shields.io/badge/Next.js-15.1.3-black)
 ![Gemini](https://img.shields.io/badge/Gemini-2.0%20Flash-blue)
-![Jira](https://img.shields.io/badge/Jira-API%20v2-0052CC)
+![Jira](https://img.shields.io/badge/Jira-API%20v3-0052CC)
+![MCP](https://img.shields.io/badge/MCP-Protocol-purple)
 
-## ✨ Características
+## ✨ Características Principales
 
-- 🤖 **Chat inteligente**: Habla con Jira usando lenguaje natural
-- 🔍 **Búsqueda avanzada**: JQL automático + búsqueda por keywords
-- 🎨 **Interfaz moderna**: UI limpia tipo Claude/n8n
-- ⚡ **MCP Protocol**: Arquitectura estándar y extensible
-- 🏠 **Local First**: Todo corre localmente, datos seguros
-- 🚀 **Auto-setup**: Instalación automática de dependencias
+### 🤖 **Interacción Inteligente**
+- 💬 Chat natural con Jira usando Gemini AI
+- 🔍 Búsqueda avanzada (JQL automático + keywords)
+- 🎯 Detección inteligente de consultas
+- 📊 Respuestas estructuradas y detalladas
 
-## 🎯 Lo que puedes hacer
+### 🏗️ **Arquitectura Moderna**
+- ⚡ **MCP Protocol**: Estándar para conectores AI
+- 🔄 **Dual Mode**: Modo directo + modo stdio para Cursor
+- 🏠 **Local First**: Todo corre localmente
+- 🔧 **Escalable**: Agregador MCP para múltiples servicios
 
-- **"Busca AIDEV-6"** - Encuentra issues específicos
-- **"¿Qué proyectos están disponibles?"** - Lista todos los proyectos
-- **"Muestra issues abiertos"** - Filtra por status  
-- **"Issues creados esta semana"** - Búsquedas temporales
-- **"Busca bugs de alta prioridad"** - Combina filtros
-- **"Issues asignados a mí"** - Búsquedas personales
+### 🎨 **Experiencia de Usuario**
+- 🖥️ **Web Chat**: Interfaz moderna tipo Claude
+- 📱 **Responsive**: Funciona en cualquier dispositivo
+- ⚡ **Real-time**: Respuestas instantáneas
+- 🎛️ **Control completo**: Scripts de gestión incluidos
+
+## 🎯 Capacidades Completas
+
+### 📋 **Gestión de Proyectos**
+```bash
+🔍 "Lista todos los proyectos disponibles"
+📊 "Estadísticas del proyecto AIDEV"
+🎯 "Issues abiertos en el proyecto SOP"
+```
+
+### 🔎 **Búsquedas Avanzadas**
+```bash
+🔍 "Busca AIDEV-6"                    # Issue específico
+🐛 "Todos los bugs de alta prioridad"  # Por tipo y prioridad
+📅 "Issues creados esta semana"        # Filtros temporales
+👤 "Issues asignados a mí"            # Búsquedas personales
+🔄 "Issues en progreso del proyecto X"  # Estado específico
+```
+
+### 📊 **Análisis e Insights**
+```bash
+📈 "Épicas del proyecto AIDEV"
+🎯 "Busca por tipo de issue: Story"
+📋 "Issues recientes de los últimos 30 días"
+🔥 "Subtareas del issue AIDEV-123"
+```
+
+### ✅ **Gestión de Tareas**
+```bash
+➕ "Crea un nuevo issue en proyecto TEST"
+🏷️ "Asigna el issue AIDEV-6 a juan@empresa.com"
+🔄 "Cambia estado de AIDEV-6 a In Progress"
+```
 
 ## 📋 Requisitos
 
 - **Node.js 18+**
 - **Cuenta de Jira** con API token
-- **Gemini API key** (gratis)
+- **Gemini API key** (gratis en Google AI Studio)
 - **npm** o yarn
 
-## 🛠️ Instalación
+## 🛠️ Instalación Rápida
 
-### Método 1: Script automático (Recomendado)
+### 🚀 **Método 1: Script Automático (Recomendado)**
 ```bash
 # Ejecutar instalador automático
-./install.sh
+chmod +x install.sh && ./install.sh
 
-# Editar credenciales
-nano .env
+# Configurar credenciales
+cp .env.example .env
+# Editar .env con tus credenciales
 
-# Iniciar sistema
-npm run dev
+# Iniciar sistema completo
+npm run chat-start
 ```
 
-### Método 2: Manual
+### 🔧 **Método 2: Manual**
 ```bash
 # Instalar todas las dependencias
 npm run setup
 
-# Configurar .env
+# Configurar variables de entorno
 cp .env.example .env
 # Editar .env con tus credenciales
 
-# Iniciar sistema  
+# Iniciar en modo desarrollo
 npm run dev
 ```
 
-### 2. Configurar variables de entorno
-```bash
-cp .env.example .env
-```
+## ⚙️ Configuración de Credenciales
 
-Edita `.env` con tus credenciales:
+### 📝 Variables de entorno (`.env`)
 ```env
 # Jira Configuration
 JIRA_BASE_URL=https://tu-dominio.atlassian.net
 JIRA_EMAIL=tu-email@empresa.com
 JIRA_API_TOKEN=tu-api-token-jira
 
-# OpenAI Configuration
-OPENAI_API_KEY=tu-openai-api-key
+# Gemini Configuration (gratis)
+GEMINI_API_KEY=tu-gemini-api-key
+
+# Server Configuration (opcional)
+MCP_PORT=3001
+CHAT_PORT=3000
+USE_STDIO_MCP=false
 ```
 
-### 3. Obtener credenciales de Jira
-
-#### API Token:
-1. Ve a https://id.atlassian.com/manage-profile/security/api-tokens
+### 🔑 **Obtener API Token de Jira**
+1. Ve a [Atlassian API Tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
 2. Crea un nuevo API token
-3. Copia el token a tu archivo `.env`
+3. Copia el token completo a tu archivo `.env`
 
-#### Base URL:
-- Formato: `https://tu-empresa.atlassian.net`
-- Sin `/` al final
+### 🤖 **Obtener Gemini API Key (Gratis)**
+1. Ve a [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Crea una nueva API key
+3. Copia la key a tu archivo `.env`
 
-## 🚀 Uso
+## 🚀 Modos de Uso
 
-### Iniciar todo el sistema
+### 🌐 **Para Chat Web (Recomendado)**
 ```bash
-npm run dev
+# Iniciar chat web completo
+npm run chat-start
+
+# Abrir en navegador
+open http://localhost:3000
 ```
 
-Esto inicia:
-- MCP Server (puerto 3001) 
-- Chat Client (puerto 3000)
-
-### Abrir el chat
-Abre http://localhost:3000 en tu navegador
-
-### Ejemplos de comandos
-
-```
-💬 "Muéstrame todos los issues abiertos en proyecto TEST"
-💬 "¿Qué issues tengo asignados?"
-💬 "Busca bugs de alta prioridad creados esta semana"  
-💬 "Lista todos los proyectos disponibles"
-💬 "Issues en TEST que estén en progreso"
-```
-
-## 🏗️ Arquitectura
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Next.js App   │    │   MCP Client    │    │   MCP Server    │
-│   (Chat UI)     │◄──►│   (Connector)   │◄──►│   (Jira API)    │
-│   Port 3000     │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-### Componentes:
-
-1. **MCP Server** (`mcp-server/`): Servidor que se conecta a Jira API
-2. **Chat Client** (`chat-client/`): Interfaz web Next.js para chat  
-3. **MCP Client** (`chat-client/src/lib/mcp-client.ts`): Conecta UI con servidor MCP
-
-## 🔧 Desarrollo
-
-### Scripts disponibles
-
+### 🖥️ **Para Cursor IDE**
 ```bash
-# Desarrollo (todo junto)
-npm run dev
+# Terminal 1: Iniciar servidor MCP para Cursor
+npm run mcp-server-stdio
 
-# Solo MCP server
-npm run mcp-server
+# Terminal 2: Configurar Cursor
+npm run setup-cursor
 
-# Solo cliente web  
-npm run next-dev
-
-# Build completo
-npm run build
+# En Cursor, usar:
+@jira lista proyectos
+@jira busca issues abiertos
 ```
 
-### Estructura del proyecto
-
-```
-jira-mcp-chat/
-├── mcp-server/           # Servidor MCP para Jira
-│   ├── index.js         # Lógica principal del servidor
-│   └── package.json     # Dependencias del servidor
-├── chat-client/         # Cliente web Next.js
-│   ├── src/
-│   │   ├── app/         # Páginas y API routes
-│   │   ├── components/  # Componentes React
-│   │   └── lib/         # Utilidades y MCP client
-│   └── package.json     # Dependencias del cliente
-├── package.json         # Scripts principales
-├── .env.example         # Variables de entorno
-└── README.md           # Este archivo
-```
-
-## 🤝 Compartir y Distribuir
-
-### Empaquetado para distribución
-
-1. **Build del proyecto**:
+### 🔄 **Gestión de Modos**
 ```bash
-npm run build
+npm run mcp-status          # Ver modo actual
+npm run mcp-direct          # Configurar modo directo (chat web)
+npm run mcp-stdio           # Configurar modo stdio (Cursor)
 ```
 
-2. **Crear paquete**:
-```bash
-tar -czf jira-mcp-chat.tar.gz \
-  --exclude=node_modules \
-  --exclude=.git \
-  --exclude=.next \
-  .
+## 🏗️ Arquitectura del Sistema
+
+```mermaid
+graph TB
+    A[👤 Usuario] --> B[🌐 Web Chat]
+    A --> C[🖥️ Cursor IDE]
+    
+    B --> D[📡 MCP Client Directo]
+    C --> E[📡 MCP Server stdio]
+    
+    D --> F[🔧 MCP Server Core]
+    E --> F
+    
+    F --> G[🔗 Jira API]
+    F --> H[🤖 Gemini AI]
+    
+    I[📚 Documentación] --> J[📖 USAGE_GUIDE]
+    I --> K[🛠️ TROUBLESHOOTING]
+    I --> L[🏗️ ESCALABILIDAD]
 ```
 
-3. **Compartir el archivo**: `jira-mcp-chat.tar.gz`
+### 🎯 **Componentes Principales**
 
-### Instalación por otros usuarios
+1. **🌐 Chat Web** (`chat-client/`): Interfaz Next.js moderna
+2. **📡 MCP Server** (`mcp-server/`): Servidor MCP con herramientas de Jira
+3. **🔧 MCP Clients**: Directo (web) y stdio (Cursor)
+4. **📊 Agregador MCP** (`mcp-aggregator.js`): Escalabilidad multi-servidor
+5. **📚 Documentación**: Guías completas de uso
 
+## 🔧 Scripts Disponibles
+
+### 🚀 **Inicio Rápido**
 ```bash
-# Descomprimir
-tar -xzf jira-mcp-chat.tar.gz
-cd jira-mcp-chat
+npm run chat-start         # Inicia chat web completo
+npm run dev                # Modo desarrollo (instala deps + inicia)
+npm run start              # Alias para npm run dev
+```
 
-# Instalar y configurar
-npm install
-npm run setup
-cp .env.example .env
+### 🖥️ **Para Cursor**
+```bash
+npm run mcp-server-stdio   # Servidor MCP para Cursor
+npm run setup-cursor      # Configura Cursor automáticamente
+```
 
-# Editar .env con sus credenciales
-# Ejecutar
-npm run dev
+### 🔧 **Desarrollo**
+```bash
+npm run setup              # Instala todas las dependencias
+npm run mcp-server         # Solo servidor MCP
+npm run next-dev          # Solo cliente web
+npm run build             # Build completo del proyecto
+```
+
+### 🧪 **Testing y Mantenimiento**
+```bash
+npm run mcp-test          # Prueba servidor MCP
+npm run test-tools        # Prueba herramientas específicas
+npm run test-manual       # Lista pruebas manuales
+```
+
+## 📚 Documentación Completa
+
+El proyecto incluye documentación exhaustiva:
+
+### 📖 **Guías de Usuario**
+- [`USAGE_GUIDE.md`](USAGE_GUIDE.md) - Guía completa de uso
+- [`MANUAL_TESTS.md`](MANUAL_TESTS.md) - Pruebas manuales paso a paso
+
+### 🛠️ **Guías Técnicas**
+- [`CURSOR_TROUBLESHOOTING.md`](CURSOR_TROUBLESHOOTING.md) - Resolución de problemas con Cursor
+- [`DONDE_ESTAN_LOS_SERVICIOS.md`](DONDE_ESTAN_LOS_SERVICIOS.md) - Ubicación de servicios
+- [`ESCALABILIDAD_MCP.md`](ESCALABILIDAD_MCP.md) - Escalabilidad y arquitectura
+
+### 🔧 **Guías de Desarrollo**
+- [`GUIA_MCP_REAL.md`](GUIA_MCP_REAL.md) - Implementación MCP detallada
+
+## 🔍 Herramientas de Jira Disponibles
+
+### 📋 **Información de Proyectos**
+- `get_jira_projects()` - Lista todos los proyectos
+- `search_epics()` - Busca épicas específicas
+
+### 🔎 **Búsqueda de Issues**
+- `search_jira_issues()` - Búsqueda general con JQL/keywords
+- `get_recent_issues()` - Issues recientes (últimos N días)
+- `search_by_type()` - Busca por tipo específico (Bug, Story, Task, etc.)
+
+### ✅ **Gestión de Issues**
+- `create_jira_issue()` - Crea nuevos issues/subtasks
+- Soporte para todos los tipos: Story, Task, Bug, Subtask, Epic
+
+## 📊 Ejemplos de Uso Avanzado
+
+### 🎯 **Búsquedas Complejas**
+```bash
+💬 "Busca todos los bugs de alta prioridad creados en los últimos 7 días"
+💬 "Épicas del proyecto AIDEV que estén en progreso"
+💬 "Subtareas de AIDEV-123 que estén pendientes"
+💬 "Issues asignados a leon.rodriguez.ore@gmail.com"
+```
+
+### 📈 **Análisis de Proyectos**
+```bash
+💬 "¿Cuántos issues abiertos tiene el proyecto SOP?"
+💬 "Lista todas las historias de usuario del proyecto AIDEV"
+💬 "Busca issues críticos sin asignar"
+```
+
+### ✅ **Gestión de Tareas**
+```bash
+💬 "Crea un bug de alta prioridad en proyecto TEST: 'Error en login'"
+💬 "Crea una subtarea para AIDEV-6: 'Implementar validación'"
+💬 "Asigna AIDEV-10 a maria@empresa.com"
 ```
 
 ## 🐛 Troubleshooting
 
-### Error de conexión MCP
-- Verifica que el `mcp-server` esté corriendo
-- Revisa los logs en consola del navegador
+### ❌ **Problemas Comunes**
 
-### Error de autenticación Jira  
-- Verifica `JIRA_BASE_URL` (sin `/` al final)
-- Confirma que `JIRA_EMAIL` y `JIRA_API_TOKEN` sean correctos
-- Prueba el token manualmente: `curl -u email:token https://domain.atlassian.net/rest/api/2/myself`
-
-### Error OpenAI
-- Verifica que `OPENAI_API_KEY` esté configurada
-- Confirma que tengas créditos disponibles en OpenAI
-
-### Puerto en uso
+#### Error de conexión MCP
 ```bash
-# Cambiar puerto en package.json si es necesario
-"next-dev": "cd chat-client && npm run dev -- --port 3001"
+# Verificar servidor
+npm run mcp-status
+npm run mcp-server-stdio
+
+# Reiniciar en modo directo
+npm run mcp-direct && npm run chat-start
 ```
 
-## 📚 JQL Quick Reference
+#### Error de autenticación Jira
+```bash
+# Verificar credenciales manualmente
+curl -u email:token https://domain.atlassian.net/rest/api/3/myself
 
-- `project = TEST` - Issues del proyecto TEST
-- `status = "In Progress"` - Issues en progreso
-- `assignee = currentUser()` - Mis issues asignados  
-- `created >= -7d` - Issues creados en últimos 7 días
-- `priority = High AND type = Bug` - Bugs de alta prioridad
-- `status changed to Done after -1w` - Completados esta semana
+# Verificar variables de entorno
+echo $JIRA_BASE_URL
+echo $JIRA_EMAIL
+```
+
+#### Gemini API no responde
+```bash
+# Verificar API key
+cd chat-client && node -e "
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+console.log('Testing Gemini...'); 
+// Test básico aquí
+"
+```
+
+### 🔧 **Comandos de Diagnóstico**
+```bash
+npm run mcp-status         # Estado del sistema
+npm run test-tools         # Prueba herramientas MCP
+npm run setup-cursor       # Reconfigura Cursor
+```
+
+## 🔮 Funcionalidades Futuras
+
+### 🎯 **En Desarrollo**
+- 🔄 **Webhooks**: Notificaciones en tiempo real
+- 📊 **Dashboard**: Panel de métricas de proyectos  
+- 🤖 **Auto-assignment**: Asignación inteligente de issues
+- 📧 **Notificaciones**: Email/Slack para cambios importantes
+
+### 🌟 **Roadmap**
+- **Q1 2024**: Integración con GitHub/GitLab
+- **Q2 2024**: Machine Learning para predicción de issues
+- **Q3 2024**: Mobile app companion
+- **Q4 2024**: Enterprise features (SSO, audit logs)
 
 ## 🤝 Contribuir
 
-1. Fork el proyecto
-2. Crea tu feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`) 
-4. Push al branch (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+### 🛠️ **Desarrollo**
+```bash
+# Fork y clone del repositorio
+git clone https://github.com/tu-usuario/jira-mcp-chat
+cd jira-mcp-chat
+
+# Instalar dependencias
+npm run setup
+
+# Crear rama para feature
+git checkout -b feature/nueva-funcionalidad
+
+# Desarrollar y commit
+git commit -m "feat: añadir nueva funcionalidad"
+
+# Push y crear PR
+git push origin feature/nueva-funcionalidad
+```
+
+### 📋 **Guidelines**
+1. **Tests**: Añadir tests para nuevas funcionalidades
+2. **Docs**: Actualizar documentación relevante
+3. **Commits**: Usar conventional commits (feat:, fix:, docs:)
+4. **Code Style**: Seguir las configuraciones de linting
+
+## 📊 Métricas del Proyecto
+
+- **🔧 18 archivos** en el último commit
+- **➕ 3,593 líneas** añadidas de funcionalidad
+- **📚 7 documentos** de guías completas
+- **🛠️ 15+ scripts** de gestión automatizada
+- **🔗 6 herramientas** de Jira implementadas
 
 ## 📄 Licencia
 
 MIT License - ve [LICENSE](LICENSE) para más detalles.
+
+---
+
+## 💡 ¿Necesitas Ayuda?
+
+1. **📖 Lee las guías**: Comienza con [`USAGE_GUIDE.md`](USAGE_GUIDE.md)
+2. **🐛 Problemas**: Consulta [`CURSOR_TROUBLESHOOTING.md`](CURSOR_TROUBLESHOOTING.md)
+3. **🏗️ Arquitectura**: Revisa [`ESCALABILIDAD_MCP.md`](ESCALABILIDAD_MCP.md)
+4. **🧪 Pruebas**: Ejecuta [`MANUAL_TESTS.md`](MANUAL_TESTS.md)
+
+**¡Disfruta usando Jira MCP Chat! 🚀**
