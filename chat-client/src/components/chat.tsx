@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -184,7 +184,7 @@ export function Chat() {
               <span className="text-xs text-muted-foreground">IA:</span>
               <div className="flex items-center space-x-1 bg-muted px-2 py-1 rounded-md text-xs">
                 <span>🤖</span>
-                <span>{currentAI.model}</span>
+                <span>AI Model</span>
               </div>
               <Button
                 variant="ghost"
@@ -301,8 +301,8 @@ export function Chat() {
             </div>
             <AISelector 
               onProviderChange={handleProviderChange}
-              defaultProvider={currentAI.provider}
-              defaultModel={currentAI.model}
+              defaultProvider="gemini"
+              defaultModel="gemini-2.0-flash-exp"
             />
           </div>
         </div>
