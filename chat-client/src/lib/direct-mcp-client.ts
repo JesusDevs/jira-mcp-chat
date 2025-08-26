@@ -1,10 +1,10 @@
 import { GoogleGenerativeAI, FunctionCallingMode, SchemaType } from '@google/generative-ai';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+// import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+// import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import axios from 'axios';
 import path from 'path';
 import { z } from 'zod';
-import fs from 'fs';
+// import fs from 'fs';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 let MODEL_NAME = 'gemini-2.0-flash-exp';
@@ -415,6 +415,66 @@ export function getConnectedServersInfo(): string[] {
 
 export function getAllDiscoveredTools(): any[] {
   return discoveredTools;
+}
+
+// Función para inicializar conexiones MCP al cargar la página
+export async function initializeMCPConnections() {
+  console.log('🚀 Initializing MCP connections...');
+  
+  // Hardcoded para pruebas - en producción esto vendría de la configuración real
+  const mockServers = [
+    {
+      id: 'jira',
+      name: 'Jira Management',
+      description: 'Gestión completa de Jira',
+      status: 'connected',
+      tools: [
+        { name: 'search_jira_issues', description: 'Search Jira issues' },
+        { name: 'create_jira_issue', description: 'Create Jira issues' },
+        { name: 'get_jira_projects', description: 'List Jira projects' }
+      ]
+    },
+    {
+      id: 'n8n-mcp',
+      name: 'n8n Workflow Management', 
+      description: 'Gestión de workflows n8n',
+      status: 'connected',
+      tools: [
+        { name: 'list_nodes', description: 'List n8n nodes' },
+        { name: 'search_nodes', description: 'Search n8n nodes' },
+        { name: 'validate_workflow', description: 'Validate n8n workflow' }
+      ]
+    }
+  ];
+
+  // Simular conexiones para la demo
+  if (typeof window !== 'undefined') { // Solo en el cliente
+    mcpServers.clear();
+    discoveredTools = [];
+
+    for (const server of mockServers) {
+      mcpServers.set(server.id, {
+        id: server.id,
+        name: server.name,
+        status: server.status as any,
+        tools: server.tools,
+        lastError: null
+      });
+
+      // Agregar herramientas a la lista global
+      for (const tool of server.tools) {
+        discoveredTools.push({
+          name: tool.name,
+          description: tool.description,
+          serverId: server.id,
+          serverName: server.name
+        });
+      }
+    }
+
+    isConnectedToMCP = true;
+    console.log(`✅ Initialized ${mcpServers.size} MCP servers with ${discoveredTools.length} tools`);
+  }
 }
 
 // Función para ejecutar herramientas en el servidor MCP real
@@ -1173,8 +1233,12 @@ export async function processQuery(messagesInput: any[]) {
   });
 
   // Generar prompt del sistema dinámicamente basado en herramientas disponibles
-  const connectedServers = getConnectedServersInfo();
-  const allTools = getAllDiscoveredTools();
+  const connectedServers = ['Jira Management', 'n8n Workflow Management']; // TODO: Get from actual connected servers
+  const allTools = [
+    { name: 'search_jira_issues', serverName: 'Jira', description: 'Search Jira issues' },
+    { name: 'create_jira_issue', serverName: 'Jira', description: 'Create new Jira issues' },
+    { name: 'list_nodes', serverName: 'n8n', description: 'List n8n nodes' }
+  ]; // TODO: Get from actual discovered tools
   
   const toolsInfo = allTools.map(tool => 
     `• **${tool.name}** (${tool.serverName}): ${tool.description}`

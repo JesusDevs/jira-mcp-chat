@@ -9,6 +9,7 @@ import { AutoResizeTextarea } from "@/components/autoresize-textarea";
 import AISelector from "@/components/ai-selector";
 import { MCPStatus } from "@/components/mcp-status";
 import { ArrowUp, Bot, User, Settings, Server } from "lucide-react";
+import { initializeMCPConnections } from "@/lib/direct-mcp-client";
 
 interface Message {
   role: "user" | "assistant";
@@ -41,6 +42,16 @@ export function Chat() {
           console.warn('Error loading saved AI config:', e);
         }
       }
+      
+      // Inicializar conexiones MCP via API
+      fetch('/api/init-mcp', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          console.log('MCP initialization result:', data);
+        })
+        .catch(error => {
+          console.error('Error initializing MCP connections:', error);
+        });
     }
   }, []);
 
@@ -355,7 +366,7 @@ export function Chat() {
               value={input}
               onChange={setInput}
               onKeyDown={handleKeyDown}
-              placeholder="Ask me about Jira issues... (e.g., 'Show open issues in AIDEV project')"
+              placeholder="Ask me anything about your connected MCP servers... (e.g., 'What tools are available?')"
               className="w-full border rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             />
             <Tooltip>
