@@ -1,0 +1,22 @@
+{
+  "name": "Historia de Usuario - Feature",
+  "description": "Template para historias de usuario de nuevas funcionalidades",
+  "issueType": "Story",
+  "fields": {
+    "summary": "{feature_summary}",
+    "description": "## 👤 Historia de Usuario\n**Como** {user_role}  \n**Quiero** {user_want}  \n**Para** {user_benefit}\n\n## 📋 Criterios de Aceptación\n{acceptance_criteria}\n\n## 🎨 Mockups/Wireframes\n{design_links}\n\n## 🔧 Consideraciones Técnicas\n{technical_notes}\n\n## 🧪 Casos de Prueba\n{test_cases}\n\n## ✅ Definition of Done\n{dod_checklist}",
+    "priority": "Medium",
+    "labels": ["story", "feature", "{team_context}"]
+  },
+  "variables": {
+    "feature_summary": "Resumen corto de la funcionalidad",
+    "user_role": "Rol del usuario (ej: usuario final, administrador)",
+    "user_want": "Lo que quiere hacer el usuario",
+    "user_benefit": "Beneficio que obtiene el usuario",
+    "acceptance_criteria": "Criterios específicos de aceptación",
+    "design_links": "Enlaces a mockups o wireframes",
+    "technical_notes": "Notas técnicas importantes",
+    "test_cases": "Casos de prueba específicos",
+    "dod_checklist": "Checklist de Definition of Done"
+  }
+}

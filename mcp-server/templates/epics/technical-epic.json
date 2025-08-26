@@ -1,0 +1,25 @@
+{
+  "name": "Epic Técnico",
+  "description": "Template para épicas de mejoras técnicas y arquitectura",
+  "issueType": "Epic",
+  "fields": {
+    "summary": "{technical_objective}",
+    "description": "## 🔧 Problema Técnico Actual\n{current_problem}\n\n## 🎯 Solución Propuesta\n{proposed_solution}\n\n## 🏗️ Arquitectura\n{architecture_details}\n\n## 📋 Tareas Técnicas\n- [ ] {task_1}\n- [ ] {task_2}\n- [ ] {task_3}\n- [ ] {task_4}\n\n## 🧪 Plan de Testing\n{testing_plan}\n\n## 📈 Métricas de Performance\n{performance_metrics}\n\n## 🔄 Plan de Migración\n{migration_plan}\n\n## ⚠️ Riesgos Técnicos\n{technical_risks}",
+    "priority": "Medium",
+    "labels": ["epic", "technical", "architecture", "{team_context}"]
+  },
+  "variables": {
+    "technical_objective": "Objetivo técnico principal",
+    "current_problem": "Descripción del problema técnico actual",
+    "proposed_solution": "Solución técnica propuesta",
+    "architecture_details": "Detalles de arquitectura y diseño",
+    "task_1": "Primera tarea técnica",
+    "task_2": "Segunda tarea técnica",
+    "task_3": "Tercera tarea técnica", 
+    "task_4": "Cuarta tarea técnica",
+    "testing_plan": "Plan de testing y QA",
+    "performance_metrics": "Métricas de rendimiento esperadas",
+    "migration_plan": "Plan de migración si aplica",
+    "technical_risks": "Riesgos técnicos identificados"
+  }
+}

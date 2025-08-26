@@ -1,0 +1,52 @@
+{
+  "name": "Definition of Done - Historias de Usuario",
+  "description": "Criterios que debe cumplir una historia de usuario para considerarse terminada",
+  "criteria": [
+    {
+      "category": "Desarrollo",
+      "items": [
+        "Código implementado según criterios de aceptación",
+        "Código revisado por al menos un par",
+        "Estándares de código del equipo aplicados",
+        "Refactoring completado si es necesario"
+      ]
+    },
+    {
+      "category": "Testing",
+      "items": [
+        "Tests unitarios escritos y pasando",
+        "Tests de integración ejecutados (si aplica)",
+        "Testing manual completado",
+        "Casos edge probados",
+        "Testing en múltiples browsers (frontend)"
+      ]
+    },
+    {
+      "category": "Documentación",
+      "items": [
+        "Documentación de código actualizada",
+        "README actualizado si es necesario",
+        "Documentación de API actualizada (backend)",
+        "Comentarios en código para lógica compleja"
+      ]
+    },
+    {
+      "category": "Deployment",
+      "items": [
+        "Código mergeado a rama principal",
+        "Build pipeline pasando",
+        "Deploy en ambiente de desarrollo exitoso",
+        "Validación en ambiente de desarrollo"
+      ]
+    },
+    {
+      "category": "Validación",
+      "items": [
+        "Criterios de aceptación validados",
+        "Product Owner ha aprobado la funcionalidad",
+        "No hay bugs críticos pendientes",
+        "Performance aceptable verificada"
+      ]
+    }
+  ]
+}

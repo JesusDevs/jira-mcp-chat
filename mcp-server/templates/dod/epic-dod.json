@@ -1,0 +1,52 @@
+{
+  "name": "Definition of Done - Épicas",
+  "description": "Criterios que debe cumplir una épica para considerarse terminada",
+  "criteria": [
+    {
+      "category": "Planificación",
+      "items": [
+        "Todas las historias de usuario están creadas y priorizadas",
+        "Criterios de aceptación definidos para cada historia", 
+        "Estimaciones completadas para todas las historias",
+        "Dependencias identificadas y documentadas"
+      ]
+    },
+    {
+      "category": "Desarrollo",
+      "items": [
+        "Todas las historias de usuario están completadas",
+        "Código revisado y aprobado por el equipo",
+        "Tests automatizados implementados y pasando",
+        "Documentación técnica actualizada"
+      ]
+    },
+    {
+      "category": "Testing",
+      "items": [
+        "Testing funcional completado",
+        "Testing de regresión ejecutado",
+        "Testing de performance realizado",
+        "Testing de seguridad ejecutado (si aplica)",
+        "Testing de accesibilidad completado (frontend)"
+      ]
+    },
+    {
+      "category": "Deployment",
+      "items": [
+        "Deploy en ambiente de staging exitoso",
+        "Validación en staging completada",
+        "Plan de rollback definido",
+        "Deploy en producción exitoso"
+      ]
+    },
+    {
+      "category": "Validación",
+      "items": [
+        "Criterios de aceptación validados",
+        "Métricas de éxito medidas",
+        "Feedback de stakeholders recolectado",
+        "Retrospectiva de épica completada"
+      ]
+    }
+  ]
+}

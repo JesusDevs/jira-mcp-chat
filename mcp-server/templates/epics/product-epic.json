@@ -1,0 +1,24 @@
+{
+  "name": "Epic de Producto",
+  "description": "Template para épicas centradas en funcionalidades de producto",
+  "issueType": "Epic",
+  "fields": {
+    "summary": "{epic_name}",
+    "description": "## 🎯 Objetivo\n{objective}\n\n## 💼 Valor de Negocio\n{business_value}\n\n## 👥 Usuario Objetivo\n{target_user}\n\n## 📋 Criterios de Aceptación\n{acceptance_criteria}\n\n## 🔄 Historias de Usuario\n- [ ] {story_1}\n- [ ] {story_2}\n- [ ] {story_3}\n\n## 📊 Métricas de Éxito\n{success_metrics}\n\n## 🚀 Plan de Lanzamiento\n{launch_plan}\n\n## ⚠️ Riesgos y Dependencias\n{risks_dependencies}",
+    "priority": "Medium",
+    "labels": ["epic", "product", "{team_context}"]
+  },
+  "variables": {
+    "epic_name": "Nombre de la épica",
+    "objective": "Objetivo principal de la épica",
+    "business_value": "Valor que aporta al negocio",
+    "target_user": "Perfil del usuario objetivo",
+    "acceptance_criteria": "Criterios de aceptación generales",
+    "story_1": "Primera historia de usuario",
+    "story_2": "Segunda historia de usuario", 
+    "story_3": "Tercera historia de usuario",
+    "success_metrics": "Métricas para medir el éxito",
+    "launch_plan": "Plan de lanzamiento",
+    "risks_dependencies": "Riesgos identificados y dependencias"
+  }
+}

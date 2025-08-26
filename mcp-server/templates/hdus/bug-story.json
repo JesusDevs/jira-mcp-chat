@@ -1,0 +1,26 @@
+{
+  "name": "Historia de Usuario - Bug",
+  "description": "Template para historias de usuario de corrección de bugs",
+  "issueType": "Bug",
+  "fields": {
+    "summary": "{bug_summary}",
+    "description": "## 🐛 Descripción del Bug\n{bug_description}\n\n## 🔄 Pasos para Reproducir\n1. {step_1}\n2. {step_2}\n3. {step_3}\n\n## ❌ Comportamiento Actual\n{current_behavior}\n\n## ✅ Comportamiento Esperado\n{expected_behavior}\n\n## 🌍 Entorno\n- **Browser:** {browser}\n- **OS:** {operating_system}\n- **Versión:** {version}\n\n## 📸 Screenshots/Videos\n{media_links}\n\n## 🔍 Investigación Técnica\n{technical_investigation}\n\n## 🛠️ Solución Propuesta\n{proposed_fix}",
+    "priority": "High",
+    "labels": ["bug", "fix", "{team_context}"]
+  },
+  "variables": {
+    "bug_summary": "Resumen corto del bug",
+    "bug_description": "Descripción detallada del problema",
+    "step_1": "Primer paso para reproducir",
+    "step_2": "Segundo paso para reproducir",
+    "step_3": "Tercer paso para reproducir",
+    "current_behavior": "Qué está pasando ahora",
+    "expected_behavior": "Qué debería pasar",
+    "browser": "Navegador afectado",
+    "operating_system": "Sistema operativo",
+    "version": "Versión de la aplicación",
+    "media_links": "Enlaces a screenshots o videos",
+    "technical_investigation": "Análisis técnico del problema",
+    "proposed_fix": "Propuesta de solución"
+  }
+}

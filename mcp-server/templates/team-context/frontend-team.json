@@ -1,0 +1,45 @@
+{
+  "name": "Frontend Team",
+  "description": "Contexto y estándares del equipo de frontend",
+  "responsibilities": [
+    "Desarrollo de interfaces de usuario",
+    "Experiencia de usuario (UX/UI)",
+    "Optimización de performance frontend",
+    "Testing de componentes",
+    "Accesibilidad web"
+  ],
+  "tech_stack": [
+    "React 18+",
+    "TypeScript",
+    "Next.js",
+    "TailwindCSS", 
+    "Vitest/Jest",
+    "Cypress",
+    "Storybook"
+  ],
+  "dor": [
+    "Mockups/wireframes aprobados",
+    "Criterios de aceptación definidos",
+    "APIs documentadas",
+    "Casos de prueba escritos",
+    "Revisión de accesibilidad completada"
+  ],
+  "dod": [
+    "Código revisado por par",
+    "Tests unitarios pasando (>80% cobertura)",
+    "Tests E2E pasando",
+    "Responsive design verificado",
+    "Accesibilidad validada (WCAG 2.1)",
+    "Performance optimizada (Core Web Vitals)",
+    "Documentación actualizada",
+    "Deploy en staging exitoso"
+  ],
+  "coding_standards": [
+    "ESLint + Prettier configurados",
+    "Componentes funcionales con hooks",
+    "Props tipadas con TypeScript",
+    "Naming convention: camelCase",
+    "CSS modules o Tailwind classes",
+    "Lazy loading para rutas"
+  ]
+}

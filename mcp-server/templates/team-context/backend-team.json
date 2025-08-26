@@ -1,0 +1,50 @@
+{
+  "name": "Backend Team", 
+  "description": "Contexto y estándares del equipo de backend",
+  "responsibilities": [
+    "APIs y microservicios",
+    "Base de datos y migraciones", 
+    "Autenticación y autorización",
+    "Integración con servicios externos",
+    "Performance y escalabilidad",
+    "Monitoring y logging"
+  ],
+  "tech_stack": [
+    "Node.js 18+",
+    "TypeScript",
+    "Express/Fastify",
+    "PostgreSQL/MongoDB",
+    "Redis",
+    "Docker",
+    "Jest/Vitest",
+    "Swagger/OpenAPI"
+  ],
+  "dor": [
+    "Especificaciones de API definidas",
+    "Modelo de datos diseñado",
+    "Criterios de performance establecidos",
+    "Plan de testing definido",
+    "Consideraciones de seguridad revisadas"
+  ],
+  "dod": [
+    "Código revisado por par",
+    "Tests unitarios pasando (>85% cobertura)",
+    "Tests de integración pasando",
+    "API documentada (Swagger)",
+    "Validación de entrada implementada",
+    "Manejo de errores completo",
+    "Logging apropiado agregado",
+    "Performance validada",
+    "Seguridad revisada",
+    "Deploy en staging exitoso"
+  ],
+  "coding_standards": [
+    "ESLint + Prettier configurados",
+    "Arquitectura en capas (Controller/Service/Repository)",
+    "Validación con Joi/Zod",
+    "Naming convention: camelCase",
+    "Error handling centralizado",
+    "Async/await sobre Promises",
+    "Environment variables para config"
+  ]
+}
