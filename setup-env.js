@@ -12,10 +12,10 @@
  * Uso: node setup-env.js
  */
 
-const fs = require('fs');
-const path = require('path');
-const readline = require('readline');
-const os = require('os');
+import fs from 'fs';
+import path from 'path';
+import readline from 'readline';
+import os from 'os';
 
 // Colores para la consola
 const colors = {
@@ -325,8 +325,9 @@ async function verifyJiraCredentials(config) {
 }
 
 // Ejecutar si se llama directamente
-if (require.main === module) {
+// Ejecutar main si el archivo es ejecutado directamente
+if (import.meta.url === `file://${process.argv[1]}`) {
     main().catch(console.error);
 }
 
-module.exports = { main, generateEnvContent, generateCursorMcpConfig };
+export { main, generateEnvContent, generateCursorMcpConfig };

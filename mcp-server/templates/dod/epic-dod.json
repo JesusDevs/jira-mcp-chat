@@ -1,0 +1,61 @@
+{
+  "name": "epic-dod",
+  "title": "Definition of Done - Epic",
+  "description": "Criterios que debe cumplir un Epic para considerarse completado",
+  "criteria": {
+    "planning": [
+      "Todas las historias del epic están creadas y priorizadas",
+      "Criterios de aceptación del epic están definidos",
+      "Métricas de éxito están identificadas",
+      "Dependencias externas están identificadas y gestionadas",
+      "Plan de comunicación está definido"
+    ],
+    "design": [
+      "Diseños UX/UI están aprobados por stakeholders",
+      "Arquitectura técnica está documentada",
+      "Impacto en sistemas existentes está evaluado",
+      "Plan de migración está definido (si aplica)"
+    ],
+    "development": [
+      "Todas las historias del epic están completadas",
+      "Code reviews están completados",
+      "Tests automatizados están implementados",
+      "Documentación técnica está actualizada"
+    ],
+    "testing": [
+      "Testing funcional completo",
+      "Testing de regresión pasando",
+      "Testing de performance validado",
+      "Testing de seguridad realizado",
+      "Testing de accesibilidad validado (frontend)"
+    ],
+    "deployment": [
+      "Deploy en staging exitoso",
+      "Validación con stakeholders completada",
+      "Plan de rollback documentado",
+      "Deploy en producción exitoso",
+      "Monitoreo post-deploy configurado"
+    ],
+    "closure": [
+      "Métricas de éxito medidas y documentadas",
+      "Retrospectiva del epic realizada",
+      "Lecciones aprendidas documentadas",
+      "Comunicación de completitud enviada",
+      "Documentación de usuario actualizada"
+    ]
+  },
+  "validation_checklist": [
+    "¿Todas las historias están en Done?",
+    "¿Los criterios de aceptación del epic se cumplen?",
+    "¿Las métricas de éxito están dentro de los rangos esperados?",
+    "¿Los stakeholders han validado la funcionalidad?",
+    "¿La documentación está actualizada?",
+    "¿El monitoreo está funcionando correctamente?"
+  ],
+  "sign_off_required": [
+    "Product Owner",
+    "Tech Lead",
+    "QA Lead",
+    "UX Designer (si aplica)"
+  ]
+}

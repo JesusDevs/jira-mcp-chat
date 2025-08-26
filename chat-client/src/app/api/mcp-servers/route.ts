@@ -5,7 +5,7 @@ import path from 'path';
 // Cache global de servidores
 let serversCache: any = null;
 let lastCacheTime: number = 0;
-const CACHE_DURATION = 5000; // 5 segundos
+const CACHE_DURATION = 0; // Sin cache para debug
 
 function loadMCPConfig() {
   const now = Date.now();
@@ -107,14 +107,33 @@ export async function GET(request: NextRequest) {
       if (serverId === 'jira') {
         // Verificar si las variables de Jira están configuradas
         isAvailable = !!(process.env.JIRA_BASE_URL && process.env.JIRA_EMAIL);
-        tools = [
-          { name: 'search_jira_issues', description: 'Search Jira issues using JQL, keywords, or issue keys' },
-          { name: 'create_jira_issue', description: 'Create new issues, stories, bugs, tasks, subtasks, or epics' },
-          { name: 'get_jira_projects', description: 'List all available Jira projects' },
-          { name: 'search_epics', description: 'Specialized epic search with filtering by project/status' },
-          { name: 'get_recent_issues', description: 'Show recent activity across projects' },
-          { name: 'search_by_type', description: 'Search issues by specific issue type (Bug, Story, Task, etc.)' }
-        ];
+        
+        // Obtener herramientas reales del MCP server
+        if (isAvailable) {
+          try {
+            const { MCPClient } = await import('../../../lib/real-mcp-client');
+            const mcpClient = new MCPClient(serverId, serverConfig);
+            await mcpClient.connect();
+            const mcpTools = await mcpClient.listTools();
+            tools = mcpTools.map(tool => ({
+              name: tool.name,
+              description: tool.description || 'MCP tool'
+            }));
+            await mcpClient.disconnect();
+          } catch (error) {
+            console.error(`❌ Error getting tools from ${serverId}:`, error.message);
+            console.error(`❌ Full error:`, error);
+            // Fallback a herramientas básicas si falla la conexión MCP
+            tools = [
+              { name: 'search_jira_issues', description: 'Search Jira issues using JQL, keywords, or issue keys' },
+              { name: 'create_jira_issue', description: 'Create new issues, stories, bugs, tasks, subtasks, or epics' },
+              { name: 'get_jira_projects', description: 'List all available Jira projects' },
+              { name: 'search_epics', description: 'Specialized epic search with filtering by project/status' },
+              { name: 'get_recent_issues', description: 'Show recent activity across projects' },
+              { name: 'search_by_type', description: 'Search issues by specific issue type (Bug, Story, Task, etc.)' }
+            ];
+          }
+        }
       } else if (serverId === 'n8n-mcp') {
         // Verificar si n8n-mcp está disponible globalmente
         try {

@@ -1,0 +1,24 @@
+{
+  "name": "technical-epic",
+  "title": "⚙️ [TECH EPIC] {epic_name}",
+  "description": "## 🔧 Objetivo Técnico\n{technical_objective}\n\n## 🏗️ Problema Actual\n{current_problem}\n\n## 💡 Solución Propuesta\n{proposed_solution}\n\n## 👥 Equipo Técnico\n- **Tech Lead:** {tech_lead}\n- **Arquitecto:** {architect}\n- **DevOps:** {devops_lead}\n- **Equipos:** {teams}\n\n## 📋 Criterios Técnicos de Aceptación\n{technical_criteria}\n\n## 🗺️ Plan de Implementación\n### Fase 1: Análisis y Diseño\n- [ ] Análisis de impacto\n- [ ] Diseño de arquitectura\n- [ ] Plan de migración\n- [ ] Identificación de riesgos\n\n### Fase 2: Desarrollo\n- [ ] Implementación core\n- [ ] Tests unitarios\n- [ ] Tests de integración\n- [ ] Documentación técnica\n\n### Fase 3: Deploy y Monitoreo\n- [ ] Deploy staging\n- [ ] Testing performance\n- [ ] Deploy producción\n- [ ] Monitoreo post-deploy\n\n## 📊 Métricas Técnicas\n{technical_metrics}\n\n## ⚠️ Riesgos Identificados\n{risks}\n\n## 🔗 Referencias Técnicas\n- ADR: {adr_link}\n- Documentación: {docs_link}\n- Slack: {slack_channel}",
+  "issueType": "Epic",
+  "priority": "Medium",
+  "labels": ["epic", "technical", "architecture"],
+  "fields": {
+    "epic_name": "Nombre del epic técnico",
+    "technical_objective": "Objetivo técnico principal",
+    "current_problem": "Problema que se está resolviendo",
+    "proposed_solution": "Solución técnica propuesta",
+    "tech_lead": "Lead técnico responsable",
+    "architect": "Arquitecto de software",
+    "devops_lead": "Responsable DevOps",
+    "teams": "Backend, DevOps, Platform",
+    "technical_criteria": "Criterios técnicos",
+    "technical_metrics": "Performance, disponibilidad, etc.",
+    "risks": "Riesgos técnicos identificados",
+    "adr_link": "URL del ADR (Architecture Decision Record)",
+    "docs_link": "URL de documentación técnica",
+    "slack_channel": "#tech-epic-nombre"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "feature-story",
+  "title": "✨ [STORY] {story_name}",
+  "description": "## 👤 Historia de Usuario\n**Como** {user_role}  \n**Quiero** {user_want}  \n**Para** {user_benefit}\n\n## 📋 Criterios de Aceptación\n{acceptance_criteria}\n\n## 🎨 Diseño y UX\n- **Figma:** {figma_link}\n- **Prototipo:** {prototype_link}\n- **Guía de estilo:** {style_guide}\n\n## 🔧 Consideraciones Técnicas\n{technical_considerations}\n\n## 📱 Responsive/Mobile\n{responsive_notes}\n\n## ♿ Accesibilidad\n{accessibility_notes}\n\n## 🧪 Casos de Prueba\n### Happy Path\n{happy_path_tests}\n\n### Edge Cases\n{edge_cases}\n\n### Error Handling\n{error_handling}\n\n## 📊 Métricas\n{metrics}\n\n## 🔗 Enlaces\n- Epic: {epic_link}\n- Diseño: {design_link}\n- Documentación: {docs_link}",
+  "issueType": "Story",
+  "priority": "Medium",
+  "labels": ["story", "feature", "frontend"],
+  "fields": {
+    "story_name": "Nombre de la historia",
+    "user_role": "tipo de usuario (ej: usuario registrado)",
+    "user_want": "qué quiere hacer el usuario",
+    "user_benefit": "beneficio que obtiene",
+    "acceptance_criteria": "Lista detallada de criterios",
+    "figma_link": "URL del diseño en Figma",
+    "prototype_link": "URL del prototipo",
+    "style_guide": "Referencia a guía de estilo",
+    "technical_considerations": "Consideraciones técnicas",
+    "responsive_notes": "Notas sobre responsive design",
+    "accessibility_notes": "Consideraciones de accesibilidad",
+    "happy_path_tests": "Casos de prueba principales",
+    "edge_cases": "Casos límite a probar",
+    "error_handling": "Manejo de errores",
+    "metrics": "Métricas a trackear",
+    "epic_link": "Link al epic padre",
+    "design_link": "Link al diseño",
+    "docs_link": "Link a documentación"
+  }
+}

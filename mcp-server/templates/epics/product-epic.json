@@ -1,0 +1,21 @@
+{
+  "name": "product-epic",
+  "title": "🚀 [EPIC] {epic_name}",
+  "description": "## 🎯 Objetivo del Epic\n{objective}\n\n## 📊 Valor de Negocio\n{business_value}\n\n## 👥 Stakeholders\n- **Product Owner:** {product_owner}\n- **Tech Lead:** {tech_lead}\n- **Equipos Involucrados:** {teams}\n\n## 📋 Criterios de Aceptación del Epic\n{acceptance_criteria}\n\n## 🗺️ Roadmap\n### Fase 1: Investigación y Diseño\n- [ ] Análisis de requerimientos\n- [ ] Diseño de UX/UI\n- [ ] Arquitectura técnica\n\n### Fase 2: Desarrollo\n- [ ] Desarrollo backend\n- [ ] Desarrollo frontend\n- [ ] Integración\n\n### Fase 3: Testing y Deploy\n- [ ] Testing QA\n- [ ] Testing de usuario\n- [ ] Deploy producción\n\n## 📈 Métricas de Éxito\n{success_metrics}\n\n## 🔗 Enlaces Relacionados\n- Figma: {figma_link}\n- Documentación: {docs_link}\n- Slack Channel: {slack_channel}",
+  "issueType": "Epic",
+  "priority": "High",
+  "labels": ["epic", "product", "roadmap"],
+  "fields": {
+    "epic_name": "Nombre del epic",
+    "objective": "Objetivo principal del epic",
+    "business_value": "Valor que aporta al negocio",
+    "product_owner": "Responsable de producto",
+    "tech_lead": "Lead técnico",
+    "teams": "Frontend, Backend, QA",
+    "acceptance_criteria": "Criterios principales",
+    "success_metrics": "Métricas para medir éxito",
+    "figma_link": "URL del diseño",
+    "docs_link": "URL de documentación",
+    "slack_channel": "#epic-nombre"
+  }
+}

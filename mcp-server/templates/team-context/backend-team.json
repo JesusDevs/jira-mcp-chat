@@ -1,0 +1,68 @@
+{
+  "team": "backend",
+  "name": "Backend Team",
+  "description": "Equipo responsable de APIs, lógica de negocio y arquitectura de sistemas",
+  "responsibilities": [
+    "Desarrollo de APIs REST/GraphQL",
+    "Lógica de negocio y reglas",
+    "Arquitectura de microservicios",
+    "Integración con servicios externos",
+    "Optimización de bases de datos",
+    "Seguridad y autenticación",
+    "Testing backend (unit, integration, contract)"
+  ],
+  "tech_stack": [
+    "Node.js/TypeScript",
+    "Express/Fastify",
+    "PostgreSQL/MongoDB",
+    "Redis",
+    "Docker/Kubernetes",
+    "AWS/GCP services"
+  ],
+  "team_members": {
+    "tech_lead": "{backend_lead}",
+    "senior_devs": ["{senior_backend_1}", "{senior_backend_2}"],
+    "developers": ["{backend_dev_1}", "{backend_dev_2}"],
+    "architect": "{system_architect}"
+  },
+  "communication": {
+    "slack_channel": "#backend-team",
+    "standup_time": "9:30 AM",
+    "retrospective": "Bi-weekly Friday",
+    "planning": "Every Monday",
+    "tech_sync": "Wednesday 2 PM"
+  },
+  "standards": {
+    "code_review": "Mínimo 2 reviewers, 1 senior",
+    "testing": "85% code coverage mínimo",
+    "api_documentation": "OpenAPI/Swagger actualizado",
+    "security": "OWASP Top 10 compliance",
+    "performance": "Response time < 200ms P95",
+    "monitoring": "APM y logging completo"
+  },
+  "tools": {
+    "development": "Docker, Postman/Insomnia",
+    "testing": "Jest, Supertest",
+    "monitoring": "New Relic, Datadog",
+    "ci_cd": "GitHub Actions, ArgoCD",
+    "database": "PostgreSQL, Redis",
+    "documentation": "Swagger, Notion"
+  },
+  "definition_of_ready": [
+    "Requerimientos funcionales claros",
+    "Casos de uso definidos",
+    "Modelo de datos diseñado",
+    "APIs documentadas",
+    "Criterios de performance definidos"
+  ],
+  "definition_of_done": [
+    "Código revisado y aprobado",
+    "Tests unitarios y de integración pasando",
+    "API documentada en Swagger",
+    "Logs y métricas implementadas",
+    "Security scan pasando",
+    "Performance validada",
+    "Deploy en staging exitoso",
+    "Rollback plan documentado"
+  ]
+}

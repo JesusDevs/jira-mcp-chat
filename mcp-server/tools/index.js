@@ -14,6 +14,7 @@ import { RecentIssuesTool } from './recent-issues.js';
 import { CreateIssueTool } from './create-issue.js';
 import { SearchEpicsTool } from './search-epics.js';
 import { SearchByTypeTool } from './search-by-type.js';
+import { TemplateManagerTool } from './template-manager.js';
 
 /**
  * Clase gestora de herramientas de Jira
@@ -40,6 +41,11 @@ export class JiraToolsManager {
     tools.set('search_epics', new SearchEpicsTool(this.jiraConfig));
     tools.set('search_by_type', new SearchByTypeTool(this.jiraConfig));
     
+    // Template Manager - nueva funcionalidad
+    const templateManager = new TemplateManagerTool(this.jiraConfig);
+    tools.set('list_jira_templates', templateManager);
+    tools.set('create_jira_from_template', templateManager);
+    
     return tools;
   }
 
@@ -55,6 +61,9 @@ export class JiraToolsManager {
       CreateIssueTool.getSchema(),
       SearchEpicsTool.getSchema(),
       SearchByTypeTool.getSchema(),
+      // Template Manager schemas
+      TemplateManagerTool.getListTemplatesSchema(),
+      TemplateManagerTool.getCreateFromTemplateSchema(),
     ];
   }
 
@@ -74,7 +83,17 @@ export class JiraToolsManager {
     console.log(`🔧 Executing tool: ${toolName}`, args);
     
     try {
-      const result = await tool.execute(args);
+      let result;
+      
+      // Template Manager tiene métodos específicos
+      if (toolName === 'list_jira_templates') {
+        result = await tool.listTemplates(args);
+      } else if (toolName === 'create_jira_from_template') {
+        result = await tool.createFromTemplate(args);
+      } else {
+        result = await tool.execute(args);
+      }
+      
       console.log(`✅ Tool ${toolName} executed successfully`);
       return result;
     } catch (error) {
@@ -88,11 +107,27 @@ export class JiraToolsManager {
    * @returns {Array} Array con información de cada herramienta
    */
   getToolsInfo() {
-    return Array.from(this.tools.entries()).map(([name, tool]) => ({
-      name: name,
-      class: tool.constructor.name,
-      schema: tool.constructor.getSchema(),
-    }));
+    return Array.from(this.tools.entries()).map(([name, tool]) => {
+      let schema;
+      try {
+        // Template Manager tiene esquemas específicos
+        if (name === 'list_jira_templates') {
+          schema = TemplateManagerTool.getListTemplatesSchema();
+        } else if (name === 'create_jira_from_template') {
+          schema = TemplateManagerTool.getCreateFromTemplateSchema();
+        } else {
+          schema = tool.constructor.getSchema();
+        }
+      } catch (error) {
+        schema = { name, description: 'Schema not available' };
+      }
+      
+      return {
+        name: name,
+        class: tool.constructor.name,
+        schema: schema,
+      };
+    });
   }
 
   /**
@@ -123,6 +158,7 @@ export {
   CreateIssueTool,
   SearchEpicsTool,
   SearchByTypeTool,
+  TemplateManagerTool,
 };
 
 /**

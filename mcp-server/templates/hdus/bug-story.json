@@ -1,0 +1,32 @@
+{
+  "name": "bug-story",
+  "title": "🐛 [BUG] {bug_summary}",
+  "description": "## 🔍 Descripción del Bug\n{bug_description}\n\n## 📱 Ambiente\n- **Browser:** {browser}\n- **OS:** {operating_system}\n- **Versión:** {version}\n- **URL:** {url}\n\n## 📋 Pasos para Reproducir\n{reproduction_steps}\n\n## ❌ Resultado Actual\n{actual_result}\n\n## ✅ Resultado Esperado\n{expected_result}\n\n## 📸 Evidencia\n{evidence}\n\n## 🔥 Severidad\n{severity}\n\n## 👥 Usuarios Afectados\n{affected_users}\n\n## 🔧 Investigación Técnica\n{technical_investigation}\n\n## 🛠️ Solución Propuesta\n{proposed_fix}\n\n## 🧪 Plan de Testing\n### Regression Testing\n{regression_tests}\n\n### Casos de Prueba\n{test_cases}\n\n## 📊 Impacto\n- **Usuarios afectados:** {user_impact}\n- **Funcionalidades afectadas:** {feature_impact}\n- **Workaround disponible:** {workaround}\n\n## 🔗 Enlaces\n- **Logs:** {logs_link}\n- **Monitoreo:** {monitoring_link}\n- **Slack thread:** {slack_link}",
+  "issueType": "Bug",
+  "priority": "High",
+  "labels": ["bug", "production", "hotfix"],
+  "fields": {
+    "bug_summary": "Resumen corto del bug",
+    "bug_description": "Descripción detallada",
+    "browser": "Chrome, Firefox, Safari, etc.",
+    "operating_system": "Windows, macOS, Linux, iOS, Android",
+    "version": "Versión de la aplicación",
+    "url": "URL donde ocurre el bug",
+    "reproduction_steps": "Pasos numerados para reproducir",
+    "actual_result": "Qué está pasando",
+    "expected_result": "Qué debería pasar",
+    "evidence": "Screenshots, videos, logs",
+    "severity": "Critical, High, Medium, Low",
+    "affected_users": "Número o tipo de usuarios",
+    "technical_investigation": "Análisis técnico inicial",
+    "proposed_fix": "Propuesta de solución",
+    "regression_tests": "Tests para evitar regresión",
+    "test_cases": "Casos específicos a probar",
+    "user_impact": "Impacto en usuarios",
+    "feature_impact": "Funcionalidades afectadas",
+    "workaround": "Solución temporal disponible",
+    "logs_link": "Link a logs del error",
+    "monitoring_link": "Link a dashboards",
+    "slack_link": "Link al thread de Slack"
+  }
+}

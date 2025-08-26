@@ -5,15 +5,18 @@ Cliente de chat que se conecta a **cualquier servidor MCP** usando el protocolo 
 ## ⚡ Instalación Rápida
 
 ```bash
-# Clonar e instalar
+# Opción 1: Instalación automática (Recomendada)
 git clone https://github.com/JesusDevs/jira-mcp-chat.git
 cd jira-mcp-chat
-./install-universal.sh
+./install-quick.sh   # Sin configuración interactiva
 
-# O manual
+# Opción 2: Instalación con configurador
+./install-universal.sh  # Con configuración guiada
+
+# Opción 3: Manual
 npm install && cd chat-client && npm install && cd ..
-cp env.example .env  # Configurar credenciales
-./start-dev.sh       # http://localhost:3001
+cp env.example .env && nano .env  # Configurar credenciales
+./start-dev.sh                    # http://localhost:3001
 ```
 
 ## 🏗️ Arquitectura

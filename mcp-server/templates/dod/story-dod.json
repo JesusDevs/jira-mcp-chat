@@ -1,0 +1,61 @@
+{
+  "name": "story-dod",
+  "title": "Definition of Done - Historia de Usuario",
+  "description": "Criterios que debe cumplir una Historia de Usuario para considerarse completada",
+  "criteria": {
+    "development": [
+      "Código está implementado según los criterios de aceptación",
+      "Código sigue los estándares de coding del equipo",
+      "Code review completado y aprobado",
+      "No hay code smells críticos",
+      "Refactoring necesario está completado"
+    ],
+    "testing": [
+      "Tests unitarios implementados y pasando",
+      "Tests de integración implementados (si aplica)",
+      "Coverage de código cumple estándares del equipo",
+      "Testing manual de criterios de aceptación completado",
+      "Testing de regresión pasando"
+    ],
+    "frontend_specific": [
+      "Responsive design implementado y validado",
+      "Cross-browser testing completado",
+      "Accesibilidad validada (WCAG 2.1 AA)",
+      "Performance optimizada (Core Web Vitals)",
+      "Tests e2e pasando"
+    ],
+    "backend_specific": [
+      "API documentada en Swagger",
+      "Validación de entrada implementada",
+      "Manejo de errores implementado",
+      "Logs y métricas configuradas",
+      "Tests de contrato implementados"
+    ],
+    "deployment": [
+      "Build pipeline pasando",
+      "Deploy en ambiente de desarrollo exitoso",
+      "Deploy en staging exitoso",
+      "Smoke tests pasando en staging"
+    ],
+    "documentation": [
+      "Documentación técnica actualizada",
+      "Changelog actualizado",
+      "Documentación de usuario actualizada (si aplica)",
+      "Runbook actualizado (si aplica)"
+    ]
+  },
+  "validation_checklist": [
+    "¿Todos los criterios de aceptación están cumplidos?",
+    "¿El código está revisado y aprobado?",
+    "¿Los tests están pasando?",
+    "¿La funcionalidad funciona en staging?",
+    "¿La documentación está actualizada?",
+    "¿No hay regresiones identificadas?"
+  ],
+  "sign_off_required": [
+    "Developer",
+    "Code Reviewer",
+    "QA (si aplica)",
+    "Product Owner (para validación funcional)"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "team": "frontend",
+  "name": "Frontend Team",
+  "description": "Equipo responsable de la experiencia de usuario y interfaces",
+  "responsibilities": [
+    "Desarrollo de interfaces de usuario",
+    "Experiencia de usuario (UX/UI)",
+    "Optimización de performance frontend",
+    "Responsive design y mobile",
+    "Accesibilidad web",
+    "Testing frontend (unit, integration, e2e)"
+  ],
+  "tech_stack": [
+    "React/Next.js",
+    "TypeScript",
+    "TailwindCSS",
+    "Storybook",
+    "Jest/Vitest",
+    "Playwright/Cypress"
+  ],
+  "team_members": {
+    "tech_lead": "{frontend_lead}",
+    "senior_devs": ["{senior_frontend_1}", "{senior_frontend_2}"],
+    "developers": ["{frontend_dev_1}", "{frontend_dev_2}"],
+    "ux_designer": "{ux_designer}"
+  },
+  "communication": {
+    "slack_channel": "#frontend-team",
+    "standup_time": "9:00 AM",
+    "retrospective": "Bi-weekly Friday",
+    "planning": "Every Monday"
+  },
+  "standards": {
+    "code_review": "Mínimo 2 reviewers para PRs",
+    "testing": "90% code coverage mínimo",
+    "accessibility": "WCAG 2.1 AA compliance",
+    "performance": "Core Web Vitals en verde",
+    "browser_support": "Chrome, Firefox, Safari, Edge (últimas 2 versiones)"
+  },
+  "tools": {
+    "design": "Figma",
+    "testing": "Jest, Playwright",
+    "monitoring": "Sentry, Google Analytics",
+    "ci_cd": "GitHub Actions",
+    "package_manager": "npm/yarn"
+  },
+  "definition_of_ready": [
+    "Diseño aprobado en Figma",
+    "Criterios de aceptación claros",
+    "APIs definidas y documentadas",
+    "Casos de prueba identificados"
+  ],
+  "definition_of_done": [
+    "Código revisado y aprobado",
+    "Tests unitarios pasando",
+    "Tests e2e pasando",
+    "Responsive design verificado",
+    "Accesibilidad validada",
+    "Performance optimizada",
+    "Deploy en staging exitoso"
+  ]
+}
