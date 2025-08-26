@@ -6,8 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Jira MCP Chat",
-  description: "Chat with Jira using MCP Protocol",
+  title: "Universal MCP Client",
+  description: "Universal MCP Client - Connect to any MCP server",
 };
 
 export default function RootLayout({

@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AutoResizeTextarea } from "@/components/autoresize-textarea";
-import { ArrowUp, Bot, User } from "lucide-react";
+import AISelector from "@/components/ai-selector";
+import { MCPStatus } from "@/components/mcp-status";
+import { ArrowUp, Bot, User, Settings, Server } from "lucide-react";
+import { initializeMCPConnections } from "@/lib/direct-mcp-client";
 
 interface Message {
   role: "user" | "assistant";
@@ -18,6 +21,46 @@ export function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [activeTab, setActiveTab] = useState<'ai' | 'mcp'>('ai');
+  const [currentAI, setCurrentAI] = useState<{provider: string, model: string}>({
+    provider: 'gemini', 
+    model: 'gemini-2.0-flash-exp'
+  });
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Cargar configuración guardada después del primer render (evita hydration error)
+  useEffect(() => {
+    setIsHydrated(true);
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('aiConfig');
+      if (saved) {
+        try {
+          const config = JSON.parse(saved);
+          setCurrentAI(config);
+        } catch (e) {
+          console.warn('Error loading saved AI config:', e);
+        }
+      }
+      
+      // Inicializar conexiones MCP via API
+      fetch('/api/init-mcp', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          console.log('MCP initialization result:', data);
+        })
+        .catch(error => {
+          console.error('Error initializing MCP connections:', error);
+        });
+    }
+  }, []);
+
+  const handleProviderChange = (provider: string, model: string) => {
+    setCurrentAI({ provider, model });
+    // Guardar en localStorage para persistencia
+    localStorage.setItem('aiConfig', JSON.stringify({ provider, model }));
+    console.log(`🔄 AI changed to: ${provider} - ${model}`);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +79,8 @@ export function Chat() {
         },
         body: JSON.stringify({
           messages: [...messages, userMessage],
+          aiProvider: currentAI.provider,
+          aiModel: currentAI.model,
         }),
       });
 
@@ -147,10 +192,27 @@ export function Chat() {
         <div className="container flex h-14 items-center">
           <div className="flex items-center space-x-2">
             <Bot className="h-6 w-6" />
-            <h1 className="font-semibold">Jira MCP Chat</h1>
+            <h1 className="font-semibold">Universal MCP Client</h1>
           </div>
-          <div className="ml-auto text-sm text-muted-foreground">
-            Ask me about Jira issues using natural language
+          <div className="flex items-center space-x-4 ml-auto">
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-muted-foreground">IA:</span>
+              <div className="flex items-center space-x-1 bg-muted px-2 py-1 rounded-md text-xs">
+                <span>🤖</span>
+                <span>{isHydrated ? currentAI.model : 'AI Model'}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSettings(!showSettings)}
+                className="h-6 w-6 p-0"
+              >
+                <Settings className="h-3 w-3" />
+              </Button>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Ask me about Jira issues using natural language
+            </div>
           </div>
         </div>
       </header>
@@ -160,15 +222,15 @@ export function Chat() {
           <div className="flex h-full items-center justify-center">
             <div className="max-w-2xl text-center">
               <Bot className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Welcome to Jira MCP Chat</h2>
+              <h2 className="text-xl font-semibold mb-2">Welcome to Universal MCP Client</h2>
               <p className="text-muted-foreground mb-4">
-                I can help you search Jira issues using natural language. Try asking:
+                I can help you interact with any connected MCP servers using natural language. Try asking:
               </p>
               <div className="space-y-2 text-sm">
-                <div className="bg-muted/50 p-2 rounded">💡 "Show me all open issues in project AIDEV"</div>
-                <div className="bg-muted/50 p-2 rounded">💡 "What issues are assigned to me?"</div>
-                <div className="bg-muted/50 p-2 rounded">💡 "Find high priority bugs created this week"</div>
-                <div className="bg-muted/50 p-2 rounded">💡 "List all projects"</div>
+                <div className="bg-muted/50 p-2 rounded">💡 "What tools are available?"</div>
+                <div className="bg-muted/50 p-2 rounded">💡 "Show me the connected MCP servers"</div>
+                <div className="bg-muted/50 p-2 rounded">💡 "Help me search for information"</div>
+                <div className="bg-muted/50 p-2 rounded">💡 "List all available resources"</div>
               </div>
             </div>
           </div>
@@ -237,6 +299,66 @@ export function Chat() {
         )}
       </div>
 
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background border rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Configuración del Sistema</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSettings(false)}
+                className="h-6 w-6 p-0"
+              >
+                ✕
+              </Button>
+            </div>
+            
+            {/* Tabs */}
+            <div className="flex space-x-1 mb-6 border-b">
+              <Button
+                variant={activeTab === 'ai' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('ai')}
+                className="rounded-b-none"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Configuración IA
+              </Button>
+              <Button
+                variant={activeTab === 'mcp' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('mcp')}
+                className="rounded-b-none"
+              >
+                <Server className="h-4 w-4 mr-2" />
+                Servidores MCP
+              </Button>
+            </div>
+            
+            {/* Tab Content */}
+            <div className="space-y-4">
+              {activeTab === 'ai' && (
+                <div>
+                  <AISelector 
+                    onProviderChange={handleProviderChange}
+                    defaultProvider="gemini"
+                    defaultModel="gemini-2.0-flash-exp"
+                  />
+                </div>
+              )}
+              
+              {activeTab === 'mcp' && (
+                <div>
+                  <MCPStatus />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="border-t bg-background">
         <div className="container py-4 max-w-4xl">
           <form onSubmit={handleSubmit} className="relative">
@@ -244,7 +366,7 @@ export function Chat() {
               value={input}
               onChange={setInput}
               onKeyDown={handleKeyDown}
-              placeholder="Ask me about Jira issues... (e.g., 'Show open issues in AIDEV project')"
+              placeholder="Ask me anything about your connected MCP servers... (e.g., 'What tools are available?')"
               className="w-full border rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             />
             <Tooltip>

@@ -1,0 +1,44 @@
+{
+  "mcpServers": {
+    "example-server": {
+      "name": "Example MCP Server",
+      "description": "Servidor de ejemplo - reemplaza con tu servidor MCP",
+      "type": "local",
+      "command": "node",
+      "args": [
+        "path/to/your/mcp-server.js"
+      ],
+      "enabled": false,
+      "env": {
+        "EXAMPLE_API_KEY": "your-api-key-here"
+      }
+    },
+    "jira-server": {
+      "name": "Jira Management",
+      "description": "Servidor MCP para gestión de Jira (incluido)",
+      "type": "local",
+      "command": "node",
+      "args": [
+        "mcp-server/index.js"
+      ],
+      "enabled": true,
+      "env": {
+        "JIRA_BASE_URL": "${JIRA_BASE_URL}",
+        "JIRA_EMAIL": "${JIRA_EMAIL}",
+        "JIRA_API_TOKEN": "${JIRA_API_TOKEN}"
+      }
+    },
+    "n8n-mcp": {
+      "name": "n8n Workflow Management",
+      "description": "Servidor MCP para n8n (requiere instalación global)",
+      "type": "local",
+      "command": "n8n-mcp",
+      "args": [],
+      "enabled": true,
+      "env": {
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error"
+      }
+    }
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "version": "1.0.0",
+  "description": "Configuración universal de servidores MCP - Compatible con Cursor y otros clientes",
+  "defaultServer": "jira_local",
+  "servers": {
+    "jira_local": {
+      "name": "Jira Local",
+      "description": "Servidor Jira MCP local via stdio",
+      "type": "stdio",
+      "command": "node",
+      "path": "./mcp-server/index.js",
+      "env": {
+        "JIRA_BASE_URL": "${JIRA_BASE_URL}",
+        "JIRA_EMAIL": "${JIRA_EMAIL}",
+        "JIRA_API_TOKEN": "${JIRA_API_TOKEN}"
+      },
+      "capabilities": ["tools"],
+      "categories": ["productivity", "project-management"]
+    },
+    
+    "jira_remote": {
+      "name": "Jira Remote",
+      "description": "Servidor Jira MCP remoto via SSE",
+      "type": "sse",
+      "url": "http://localhost:3001/mcp/sse",
+      "headers": {
+        "Authorization": "Bearer ${MCP_API_TOKEN}"
+      },
+      "capabilities": ["tools"],
+      "categories": ["productivity", "project-management"]
+    },
+
+    "github_local": {
+      "name": "GitHub Local", 
+      "description": "Servidor GitHub MCP local",
+      "type": "stdio",
+      "command": "node",
+      "path": "./mcp-servers/github/index.js",
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "GITHUB_OWNER": "${GITHUB_OWNER}"
+      },
+      "capabilities": ["tools", "resources"],
+      "categories": ["development", "version-control"]
+    },
+
+    "slack_local": {
+      "name": "Slack Local",
+      "description": "Servidor Slack MCP local",
+      "type": "stdio", 
+      "command": "node",
+      "path": "./mcp-servers/slack/index.js",
+      "env": {
+        "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+        "SLACK_APP_TOKEN": "${SLACK_APP_TOKEN}"
+      },
+      "capabilities": ["tools"],
+      "categories": ["communication", "productivity"]
+    },
+
+    "custom_server": {
+      "name": "Custom MCP Server",
+      "description": "Servidor MCP personalizado",
+      "type": "stdio",
+      "command": "node",
+      "path": "./custom-mcp-server/index.js",
+      "env": {},
+      "capabilities": ["tools", "resources", "prompts"],
+      "categories": ["custom"]
+    },
+
+    "external_api": {
+      "name": "External API Server",
+      "description": "Servidor MCP externo via HTTP",
+      "type": "sse",
+      "url": "https://api.example.com/mcp/sse",
+      "headers": {
+        "X-API-Key": "${EXTERNAL_API_KEY}",
+        "Content-Type": "application/json"
+      },
+      "capabilities": ["tools"],
+      "categories": ["external", "api"]
+    }
+  },
+
+  "profiles": {
+    "development": {
+      "description": "Perfil para desarrollo local",
+      "activeServers": ["jira_local", "github_local"],
+      "env": {
+        "NODE_ENV": "development",
+        "LOG_LEVEL": "debug"
+      }
+    },
+
+    "production": {
+      "description": "Perfil para producción",
+      "activeServers": ["jira_remote", "external_api"],
+      "env": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info"
+      }
+    },
+
+    "testing": {
+      "description": "Perfil para testing",
+      "activeServers": ["jira_local"],
+      "env": {
+        "NODE_ENV": "test",
+        "LOG_LEVEL": "error"
+      }
+    }
+  },
+
+  "transport_config": {
+    "stdio": {
+      "timeout": 30000,
+      "retry_attempts": 3,
+      "retry_delay": 1000
+    },
+    "sse": {
+      "timeout": 60000,
+      "retry_attempts": 5,
+      "retry_delay": 2000,
+      "keepalive": true
+    },
+    "websocket": {
+      "timeout": 30000,
+      "retry_attempts": 3,
+      "retry_delay": 1000,
+      "ping_interval": 30000
+    },
+    "http": {
+      "timeout": 10000,
+      "retry_attempts": 3,
+      "retry_delay": 500
+    }
+  },
+
+  "ai_config": {
+    "default_provider": "gemini",
+    "default_model": "gemini-1.5-flash",
+    "fallback_provider": "ollama-llama3",
+    "fallback_model": "llama3:8b",
+    "providers": {
+      "openai": {
+        "api_key_env": "OPENAI_API_KEY",
+        "base_url": "https://api.openai.com/v1",
+        "default_model": "gpt-4",
+        "temperature": 0.7,
+        "max_tokens": 4096
+      },
+      "gemini": {
+        "api_key_env": "GEMINI_API_KEY", 
+        "default_model": "gemini-1.5-flash",
+        "temperature": 0.7,
+        "max_tokens": 4096
+      },
+      "ollama": {
+        "base_url": "http://127.0.0.1:11434",
+        "default_model": "llama3:8b",
+        "temperature": 0.7,
+        "max_tokens": 4096,
+        "timeout": 60000
+      }
+    },
+    "auto_fallback": true,
+    "quota_management": {
+      "enabled": true,
+      "retry_delay": 30000,
+      "max_retries": 3
+    }
+  },
+
+  "ui_config": {
+    "chat": {
+      "default_provider": "${AI_DEFAULT_PROVIDER:gemini}",
+      "default_model": "${AI_DEFAULT_MODEL:gemini-1.5-flash}",
+      "temperature": 0.7,
+      "max_tokens": 4096,
+      "function_calling": "auto",
+      "show_ai_selector": true,
+      "show_usage_stats": true
+    },
+    "cursor": {
+      "config_file": ".cursor-mcp.json",
+      "auto_reload": true,
+      "debug": false,
+      "ai_provider": "${CURSOR_AI_PROVIDER:gemini}",
+      "ai_model": "${CURSOR_AI_MODEL:gemini-1.5-flash}"
+    }
+  },
+
+  "security": {
+    "allowed_hosts": [
+      "localhost",
+      "127.0.0.1",
+      "*.example.com"
+    ],
+    "require_auth": false,
+    "token_validation": false
+  }
+}
