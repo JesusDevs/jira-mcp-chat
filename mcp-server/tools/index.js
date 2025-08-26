@@ -14,6 +14,7 @@ import { RecentIssuesTool } from './recent-issues.js';
 import { CreateIssueTool } from './create-issue.js';
 import { SearchEpicsTool } from './search-epics.js';
 import { SearchByTypeTool } from './search-by-type.js';
+import { TemplateManagerTool } from './template-manager.js';
 
 /**
  * Clase gestora de herramientas de Jira
@@ -40,6 +41,11 @@ export class JiraToolsManager {
     tools.set('search_epics', new SearchEpicsTool(this.jiraConfig));
     tools.set('search_by_type', new SearchByTypeTool(this.jiraConfig));
     
+    // Template Manager (herramientas de templates)
+    const templateManager = new TemplateManagerTool(this.jiraConfig);
+    tools.set('list_jira_templates', templateManager);
+    tools.set('create_jira_from_template', templateManager);
+    
     return tools;
   }
 
@@ -55,6 +61,8 @@ export class JiraToolsManager {
       CreateIssueTool.getSchema(),
       SearchEpicsTool.getSchema(),
       SearchByTypeTool.getSchema(),
+      TemplateManagerTool.getListTemplatesSchema(),
+      TemplateManagerTool.getCreateFromTemplateSchema(),
     ];
   }
 
@@ -74,7 +82,18 @@ export class JiraToolsManager {
     console.log(`🔧 Executing tool: ${toolName}`, args);
     
     try {
-      const result = await tool.execute(args);
+      let result;
+      
+      // Manejo especial para herramientas de templates
+      if (toolName === 'list_jira_templates') {
+        result = await tool.listTemplates(args);
+      } else if (toolName === 'create_jira_from_template') {
+        result = await tool.createFromTemplate(args);
+      } else {
+        // Herramientas normales
+        result = await tool.execute(args);
+      }
+      
       console.log(`✅ Tool ${toolName} executed successfully`);
       return result;
     } catch (error) {

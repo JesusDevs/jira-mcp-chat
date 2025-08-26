@@ -1,222 +1,210 @@
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { spawn, ChildProcess } from 'child_process';
-import path from 'path';
+// Real MCP Client - Server-side communication with MCP servers
+
+interface MCPTool {
+  name: string;
+  description: string;
+  inputSchema: any;
+}
+
+interface MCPToolResult {
+  success: boolean;
+  result?: any;
+  error?: string;
+}
+
+interface MCPTemplate {
+  name: string;
+  description: string;
+  category: string;
+  variables: Record<string, string>;
+}
 
 /**
- * Cliente MCP REAL que se conecta al servidor MCP via stdio
- * Compatible con el protocolo estándar MCP
+ * Cliente MCP Real que se comunica via API proxy
  */
 export class RealMCPClient {
-  private client: Client | null = null;
-  private transport: StdioClientTransport | null = null;
-  private serverProcess: ChildProcess | null = null;
-  private isConnected = false;
-  private tools: any[] = [];
+  private baseUrl: string;
+  private serverId: string;
 
-  constructor() {
-    console.log('🔧 Initializing Real MCP Client');
+  constructor(serverId: string = 'jira', baseUrl: string = '/api/mcp-proxy') {
+    this.serverId = serverId;
+    this.baseUrl = baseUrl;
   }
 
-  async connect(): Promise<boolean> {
+  /**
+   * Listar herramientas disponibles
+   */
+  async listTools(): Promise<MCPTool[]> {
     try {
-      if (this.isConnected) {
-        console.log('✅ MCP Client already connected');
-        return true;
-      }
-
-      console.log('🚀 Starting MCP Server process...');
+      console.log(`🔍 Listing tools for server: ${this.serverId}`);
       
-      // Buscar la ruta del servidor MCP de manera más robusta
-      const possiblePaths = [
-        path.resolve(process.cwd(), '../mcp-server/index.js'),
-        path.resolve(process.cwd(), './mcp-server/index.js'),
-        path.resolve(__dirname, '../../mcp-server/index.js'),
-        path.resolve(__dirname, '../../../mcp-server/index.js'),
-      ];
-      
-      console.log('📁 Current working directory:', process.cwd());
-      console.log('📂 __dirname:', __dirname);
-      
-      let serverPath: string | null = null;
-      const fs = require('fs');
-      
-      for (const testPath of possiblePaths) {
-        console.log('🔍 Checking path:', testPath);
-        if (fs.existsSync(testPath)) {
-          serverPath = testPath;
-          console.log('✅ Found MCP Server at:', serverPath);
-          break;
+      const response = await fetch(`${this.baseUrl}?server=${this.serverId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
         }
-      }
+      });
+
+      const data = await response.json();
       
-      if (!serverPath) {
-        throw new Error(`MCP Server not found. Tried paths: ${possiblePaths.join(', ')}`);
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to list tools');
       }
 
-      // Crear el cliente MCP
-      this.client = new Client({
-        name: 'jira-chat-client',
-        version: '1.0.0',
-      }, {
-        capabilities: {
-          tools: {},
+      console.log(`✅ Found ${data.tools.length} tools`);
+      return data.tools;
+
+    } catch (error) {
+      console.error(`❌ Error listing tools:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Ejecutar herramienta MCP
+   */
+  async executeTool(toolName: string, arguments: any): Promise<MCPToolResult> {
+    try {
+      console.log(`🔧 Executing tool: ${toolName}`);
+      console.log(`📝 Arguments:`, arguments);
+
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         },
+        body: JSON.stringify({
+          server: this.serverId,
+          toolName,
+          arguments
+        })
       });
 
-      // Crear transport usando el comando del servidor
-      this.transport = new StdioClientTransport({
-        command: 'node',
-        args: [serverPath],
-        env: {
-          ...process.env,
-          JIRA_BASE_URL: process.env.JIRA_BASE_URL,
-          JIRA_EMAIL: process.env.JIRA_EMAIL,
-          JIRA_API_TOKEN: process.env.JIRA_API_TOKEN,
-        }
-      });
-
-      // Conectar el cliente al servidor
-      await this.client.connect(this.transport);
+      const data = await response.json();
       
-      console.log('✅ MCP Client connected to server');
-      this.isConnected = true;
-
-      // Obtener lista de herramientas disponibles
-      await this.loadTools();
-      
-      return true;
-
-    } catch (error) {
-      console.error('❌ Failed to connect MCP Client:', error);
-      this.isConnected = false;
-      return false;
-    }
-  }
-
-  async loadTools(): Promise<void> {
-    if (!this.client || !this.isConnected) {
-      throw new Error('MCP Client not connected');
-    }
-
-    try {
-      console.log('📡 Requesting tools from MCP server...');
-      const response = await this.client.request({
-        method: 'tools/list',
-        params: {}
-      }, {}) as any;
-
-      console.log('📡 Raw MCP response:', JSON.stringify(response, null, 2));
-      this.tools = response.tools || [];
-      console.log(`🔧 Loaded ${this.tools.length} MCP tools:`, this.tools.map(t => t.name));
-      
-    } catch (error) {
-      console.error('❌ Failed to load tools:', error);
-      console.error('❌ Error details:', error.stack);
-      this.tools = [];
-    }
-  }
-
-  getTools(): any[] {
-    return this.tools.map(tool => ({
-      name: tool.name,
-      description: tool.description,
-      parameters: tool.inputSchema || {
-        type: 'object',
-        properties: {},
-        additionalProperties: true
+      if (!data.success) {
+        throw new Error(data.error || 'Tool execution failed');
       }
-    }));
-  }
 
-  async callTool(toolName: string, args: any): Promise<any> {
-    if (!this.client || !this.isConnected) {
-      throw new Error('MCP Client not connected');
-    }
-
-    try {
-      console.log(`🔧 Calling MCP tool: ${toolName}`, args);
-      
-      const response = await this.client.request({
-        method: 'tools/call',
-        params: {
-          name: toolName,
-          arguments: args
-        }
-      }, {}) as any;
-
-      console.log(`✅ Tool ${toolName} executed successfully`);
+      console.log(`✅ Tool executed successfully: ${toolName}`);
       return {
-        name: toolName,
-        arguments: args,
-        result: response.content?.[0]?.text ? JSON.parse(response.content[0].text) : response
+        success: true,
+        result: data.result
       };
 
     } catch (error) {
-      console.error(`❌ Error calling tool ${toolName}:`, error);
-      throw new Error(`Failed to execute ${toolName}: ${error.message}`);
+      console.error(`❌ Error executing tool ${toolName}:`, error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 
-  async disconnect(): Promise<void> {
+  /**
+   * Listar templates disponibles
+   */
+  async listTemplates(category?: string): Promise<MCPTemplate[]> {
     try {
-      if (this.client && this.transport) {
-        await this.client.close();
-        this.transport = null;
-        this.client = null;
+      console.log(`📋 Listing templates, category: ${category || 'all'}`);
+      
+      const url = new URL(this.baseUrl, window.location.origin);
+      url.searchParams.set('server', this.serverId);
+      if (category) {
+        url.searchParams.set('category', category);
       }
 
-      if (this.serverProcess) {
-        this.serverProcess.kill('SIGTERM');
-        this.serverProcess = null;
+      const response = await fetch(url.toString(), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to list templates');
       }
 
-      this.isConnected = false;
-      console.log('🔌 MCP Client disconnected');
+      console.log(`✅ Found templates:`, data.templates);
+      return data.templates;
 
     } catch (error) {
-      console.error('❌ Error disconnecting MCP Client:', error);
+      console.error(`❌ Error listing templates:`, error);
+      throw error;
     }
   }
 
-  isReady(): boolean {
-    return this.isConnected && this.client !== null;
+  /**
+   * Crear issue desde template
+   */
+  async createFromTemplate(templateName: string, variables: Record<string, string>, teamContext?: string, project?: string): Promise<MCPToolResult> {
+    try {
+      console.log(`🎯 Creating issue from template: ${templateName}`);
+      
+      return await this.executeTool('create_jira_from_template', {
+        template: templateName,
+        variables,
+        team_context: teamContext,
+        project
+      });
+
+    } catch (error) {
+      console.error(`❌ Error creating from template:`, error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
   }
 
-  getConnectionStatus(): string {
-    if (!this.isConnected) return 'disconnected';
-    if (!this.client) return 'connecting';
-    return 'connected';
+  /**
+   * Obtener información del servidor MCP
+   */
+  async getServerInfo(): Promise<any> {
+    try {
+      const tools = await this.listTools();
+      return {
+        serverId: this.serverId,
+        toolCount: tools.length,
+        tools: tools.map(t => ({
+          name: t.name,
+          description: t.description
+        }))
+      };
+    } catch (error) {
+      console.error(`❌ Error getting server info:`, error);
+      return {
+        serverId: this.serverId,
+        toolCount: 0,
+        tools: [],
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Verificar conectividad con el servidor MCP
+   */
+  async ping(): Promise<boolean> {
+    try {
+      await this.listTools();
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 }
 
-// Singleton instance
-let mcpClientInstance: RealMCPClient | null = null;
+/**
+ * Instancia singleton del cliente MCP
+ */
+export const realMCPClient = new RealMCPClient('jira');
 
-export function getMCPClient(): RealMCPClient {
-  if (!mcpClientInstance) {
-    mcpClientInstance = new RealMCPClient();
-  }
-  return mcpClientInstance;
+/**
+ * Factory function para crear clientes MCP
+ */
+export function createMCPClient(serverId: string): RealMCPClient {
+  return new RealMCPClient(serverId);
 }
-
-// Cleanup al cerrar la aplicación
-process.on('exit', () => {
-  if (mcpClientInstance) {
-    mcpClientInstance.disconnect();
-  }
-});
-
-process.on('SIGINT', () => {
-  if (mcpClientInstance) {
-    mcpClientInstance.disconnect();
-  }
-  process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-  if (mcpClientInstance) {
-    mcpClientInstance.disconnect();
-  }
-  process.exit(0);
-});

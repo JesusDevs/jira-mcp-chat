@@ -2,9 +2,10 @@ import { GoogleGenerativeAI, FunctionCallingMode, SchemaType } from '@google/gen
 // import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 // import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import axios from 'axios';
-import path from 'path';
+// import path from 'path'; // Node.js module - commented for browser compatibility
 import { z } from 'zod';
 // import fs from 'fs';
+import { RealMCPClient, createMCPClient } from './real-mcp-client';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 let MODEL_NAME = 'gemini-2.0-flash-exp';
@@ -209,14 +210,56 @@ interface MCPServerConnection {
 }
 
 let mcpServers: Map<string, MCPServerConnection> = new Map();
+
+// Cliente MCP Real
+let realMCPClient: RealMCPClient | null = null;
+let mcpMode: 'real' | 'fallback' = 'real'; // Empezar con modo real
 let discoveredTools: any[] = [];
 let isConnectedToMCP = false;
+
+/**
+ * Inicializar cliente MCP Real
+ */
+async function initializeRealMCPClient(): Promise<boolean> {
+  try {
+    console.log('🚀 Initializing Real MCP Client...');
+    
+    realMCPClient = createMCPClient('jira');
+    
+    // Probar conectividad
+    const isConnected = await realMCPClient.ping();
+    
+    if (isConnected) {
+      // Obtener herramientas dinámicamente
+      const tools = await realMCPClient.listTools();
+      discoveredTools = tools.map(tool => ({
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.inputSchema
+      }));
+      
+      console.log(`✅ Real MCP Client initialized with ${tools.length} tools`);
+      mcpMode = 'real';
+      isConnectedToMCP = true;
+      return true;
+    } else {
+      throw new Error('MCP ping failed');
+    }
+    
+  } catch (error) {
+    console.warn('⚠️ Real MCP Client failed, falling back to static mode:', error.message);
+    mcpMode = 'fallback';
+    isConnectedToMCP = false;
+    realMCPClient = null;
+    return false;
+  }
+}
 
 // Función para cargar configuración de servidores MCP
 function loadMCPServersConfig(): any[] {
   try {
     // Primero intentar cargar desde mcp-config.json
-    const configPath = path.resolve(process.cwd(), 'mcp-config.json');
+    const configPath = './mcp-config.json'; // Simplified path for browser
     if (fs.existsSync(configPath)) {
       const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
       const servers = Object.entries(config.mcpServers || {}).map(([id, server]: [string, any]) => ({
@@ -262,7 +305,7 @@ async function connectToMCPServer(serverId: string, serverConfig: any): Promise<
     if (serverConfig.type === 'local') {
       const serverPath = serverConfig.args?.[0]?.startsWith('/') 
         ? serverConfig.args[0]
-        : path.resolve(process.cwd(), serverConfig.args?.[0] || '../mcp-server/index.js');
+        : serverConfig.args?.[0] || '../mcp-server/index.js'; // Simplified path
       
       transport = new StdioClientTransport({
         command: serverConfig.command || 'node',
@@ -419,6 +462,18 @@ export function getAllDiscoveredTools(): any[] {
 
 // Función para inicializar conexiones MCP al cargar la página
 export async function initializeMCPConnections() {
+  console.log('🚀 Initializing MCP Client with Dynamic Tool Discovery...');
+  
+  // Intentar inicializar cliente MCP Real primero
+  const realMCPSuccess = await initializeRealMCPClient();
+  
+  if (realMCPSuccess) {
+    console.log('🎯 Mode: Real MCP Connection');
+    return;
+  }
+  
+  // Fallback al modo anterior
+  console.log('📋 Falling back to static tools mode...');
   console.log('🚀 Initializing MCP connections...');
   
   // Hardcoded para pruebas - en producción esto vendría de la configuración real
@@ -790,6 +845,26 @@ export async function initMCP() {
 }
 
 export async function executeToolCall(toolCall: any) {
+  console.log(`🔧 Executing tool: ${toolCall.name} with args:`, toolCall.arguments);
+  
+  // Usar MCP Real si está disponible
+  if (mcpMode === 'real' && realMCPClient) {
+    console.log('🎯 Executing via Real MCP Client');
+    try {
+      const result = await realMCPClient.executeTool(toolCall.name, toolCall.arguments);
+      if (result.success) {
+        return result.result;
+      } else {
+        throw new Error(result.error || 'Real MCP execution failed');
+      }
+    } catch (error) {
+      console.warn('⚠️ Real MCP execution failed, falling back to static:', error.message);
+      // Continuar con fallback
+    }
+  }
+  
+  // Fallback a implementación estática
+  console.log('🎯 Executing via Static Implementation (fallback)');
   const toolName = toolCall.name;
   const toolArgs = toolCall.args || {};
 
