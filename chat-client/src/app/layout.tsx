@@ -6,8 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Universal MCP Client",
-  description: "Universal MCP Client - Connect to any MCP server",
+  title: "Ludo Chat Client",
+  description: "Ludo Universal MCP Chat Client - Connect to any MCP server",
 };
 
 export default function RootLayout({

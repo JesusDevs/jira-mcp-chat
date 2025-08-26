@@ -1,19 +1,20 @@
-# 🚀 Universal MCP Client
+# 🚀 Ludo Universal MCP System
 
-Cliente de chat que se conecta a **cualquier servidor MCP** usando el protocolo estándar. Interfaz web moderna para interactuar con múltiples servicios via MCP.
+Sistema completo de chat universal que se conecta a **cualquier servidor MCP**. Incluye cliente web moderno y servidor MCP con templates avanzados.
 
 ## ⚡ Instalación Rápida
 
 ```bash
-# Clonar e instalar
+# Instalación completa (Recomendada)
 git clone https://github.com/JesusDevs/jira-mcp-chat.git
 cd jira-mcp-chat
-./install-universal.sh
+./install.sh
 
-# O manual
-npm install && cd chat-client && npm install && cd ..
-cp env.example .env  # Configurar credenciales
-./start-dev.sh       # http://localhost:3001
+# Iniciar sistema
+./start.sh      # Modo producción
+./dev.sh        # Modo desarrollo
+
+# Abrir: http://localhost:3001
 ```
 
 ## 🏗️ Arquitectura

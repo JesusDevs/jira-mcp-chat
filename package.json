@@ -1,7 +1,7 @@
 {
-  "name": "universal-mcp-client",
+  "name": "ludo-universal-system",
   "version": "2.0.0",
-  "description": "Universal MCP Chat Client - Conecta a cualquier servidor MCP (stdio/SSE/WebSocket)",
+  "description": "Ludo Universal MCP System - Complete chat system with MCP server and client",
   "type": "module",
   "scripts": {
     "dev": "npm run install-all && cd chat-client && npm run dev",

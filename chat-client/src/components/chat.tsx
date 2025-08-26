@@ -192,7 +192,7 @@ export function Chat() {
         <div className="container flex h-14 items-center">
           <div className="flex items-center space-x-2">
             <Bot className="h-6 w-6" />
-            <h1 className="font-semibold">Universal MCP Client</h1>
+            <h1 className="font-semibold">Ludo Chat Client</h1>
           </div>
           <div className="flex items-center space-x-4 ml-auto">
             <div className="flex items-center space-x-2">

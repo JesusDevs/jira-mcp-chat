@@ -1,12 +1,17 @@
 {
-  "name": "jira-mcp-server",
+  "name": "ludo-mcp-server",
   "version": "1.0.0",
+  "description": "Universal MCP Server with Jira integration and template system",
   "type": "module",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
-    "build": "echo 'MCP Server built'"
+    "build": "echo 'MCP Server built'",
+    "install-all": "npm install && cd tools && npm install",
+    "setup": "npm run install-all && echo '✅ Ludo MCP Server setup complete'",
+    "test": "node index.js --info",
+    "clean": "rm -rf node_modules package-lock.json tools/node_modules tools/package-lock.json && npm run install-all"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
